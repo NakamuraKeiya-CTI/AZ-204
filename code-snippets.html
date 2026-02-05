@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コードスニペット問題 | AZ-204 学習ガイド</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <button class="hamburger" aria-label="メニュー">&#9776;</button>
+  <h1>AZ-204 <span>Azure Developer Associate</span></h1>
+  <div class="header-actions">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切替">&#127769;</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">ホーム</div>
+    <a href="index.html"><span class="nav-icon">&#127968;</span> ダッシュボード</a>
+    <div class="sidebar-section-title">試験範囲</div>
+    <a href="compute.html"><span class="nav-icon">&#9881;</span> コンピューティング <span class="nav-badge">25-30%</span></a>
+    <a href="storage.html"><span class="nav-icon">&#128451;</span> ストレージ <span class="nav-badge">15-20%</span></a>
+    <a href="security.html"><span class="nav-icon">&#128274;</span> セキュリティ <span class="nav-badge">20-25%</span></a>
+    <a href="monitor.html"><span class="nav-icon">&#128200;</span> 監視・最適化 <span class="nav-badge">15-20%</span></a>
+    <a href="integration.html"><span class="nav-icon">&#128279;</span> サービス連携 <span class="nav-badge">15-20%</span></a>
+    <div class="sidebar-section-title">対策</div>
+    <a href="code-snippets.html"><span class="nav-icon">&#128187;</span> コードスニペット問題</a>
+  </div>
+</nav>
+<div class="sidebar-overlay"></div>
+<div class="reading-progress" style="width:0"></div>
+
+<main class="main-content">
+  <div class="breadcrumb"><a href="index.html">ホーム</a> &gt; コードスニペット問題</div>
+  <div class="module-header">
+    <h2>&#128187; コードスニペット問題対策</h2>
+    <div class="subtitle">全体の約 30〜40% を占める最重要パターン ― C# SDK と Azure CLI を中心に攻略</div>
+  </div>
+
+  <!-- ==================== Overview ==================== -->
+  <div class="section">
+    <h3>出題パターンの概要</h3>
+    <p>AZ-204 では、単なる知識問題だけでなく<strong>実際のコードを読み書きする能力</strong>が問われます。約 40〜60 問中、30〜40% がコード関連の問題です。</p>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>パターン</th><th>内容</th><th>頻度</th></tr>
+        <tr><td>コード穴埋め</td><td>コードの一部が空欄、正しいメソッド名やパラメータを選択</td><td>最頻出</td></tr>
+        <tr><td>CLI / PowerShell 穴埋め</td><td>Azure CLI コマンドの正しいサブコマンドやパラメータを選択</td><td>高い</td></tr>
+        <tr><td>コード並べ替え</td><td>コードブロックを正しい順序にドラッグ＆ドロップ</td><td>中程度</td></tr>
+        <tr><td>コード正誤判定</td><td>提示されたコードが要件を満たすか判断</td><td>中程度</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box important">
+      <strong>最重要ポイント</strong>
+      SDK v12 の API 名を正確に覚えること。旧 SDK (v11) との違いがひっかけに使われます。メソッド名の1単語の違いが正誤を分けます。
+    </div>
+  </div>
+
+  <!-- ==================== Key SDK Reference ==================== -->
+  <div class="section">
+    <h3>頻出 SDK / API リファレンス</h3>
+    <p>以下の SDK クラスとメソッドは、穴埋め問題で繰り返し出題されます。<strong>太字</strong>のメソッドは特に重要です。</p>
+
+    <h4>Blob Storage (Azure.Storage.Blobs)</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>クラス</th><th>主要メソッド</th><th>用途</th></tr>
+        <tr><td><code>BlobServiceClient</code></td><td><strong><code>GetBlobContainerClient()</code></strong></td><td>コンテナクライアント取得</td></tr>
+        <tr><td><code>BlobContainerClient</code></td><td><strong><code>GetBlobClient()</code></strong>, <code>CreateIfNotExistsAsync()</code></td><td>Blob クライアント取得、コンテナ作成</td></tr>
+        <tr><td><code>BlobClient</code></td><td><strong><code>UploadAsync()</code></strong>, <strong><code>DownloadAsync()</code></strong>, <code>DeleteAsync()</code></td><td>Blob 操作</td></tr>
+        <tr><td><code>BlobClient</code></td><td><strong><code>GenerateSasUri()</code></strong></td><td>SAS URI 生成</td></tr>
+        <tr><td><code>BlobSasBuilder</code></td><td><strong><code>SetPermissions()</code></strong></td><td>SAS 権限設定</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box warn">
+      <strong>旧 SDK との違い（ひっかけ注意）</strong>
+      v11: <code>CloudBlobClient</code> / <code>GetContainerReference()</code> / <code>UploadFromFileAsync()</code><br>
+      v12: <code>BlobServiceClient</code> / <code>GetBlobContainerClient()</code> / <code>UploadAsync()</code><br>
+      試験では v12 が出題されます。v11 のメソッド名が選択肢に紛れ込んでいるので注意。
+    </div>
+
+    <h4>Cosmos DB (Microsoft.Azure.Cosmos)</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>クラス</th><th>主要メソッド</th><th>用途</th></tr>
+        <tr><td><code>CosmosClient</code></td><td><strong><code>GetContainer()</code></strong>, <code>GetDatabase()</code></td><td>コンテナ/DB 参照取得</td></tr>
+        <tr><td><code>Container</code></td><td><strong><code>CreateItemAsync()</code></strong>, <strong><code>ReadItemAsync()</code></strong></td><td>アイテム作成・読取</td></tr>
+        <tr><td><code>Container</code></td><td><strong><code>UpsertItemAsync()</code></strong>, <code>ReplaceItemAsync()</code></td><td>アイテム更新</td></tr>
+        <tr><td><code>Container</code></td><td><strong><code>GetItemQueryIterator&lt;T&gt;()</code></strong></td><td>クエリ実行</td></tr>
+        <tr><td><code>QueryDefinition</code></td><td><strong><code>WithParameter()</code></strong></td><td>パラメータバインド</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box note">
+      <strong>ReadItemAsync のシグネチャ</strong>
+      <code>ReadItemAsync&lt;T&gt;(id, new PartitionKey(partitionKeyValue))</code> ― パーティションキーが必須であることを覚えましょう。省略するとエラーになります。
+    </div>
+
+    <h4>Key Vault (Azure.Security.KeyVault.Secrets)</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>クラス</th><th>主要メソッド</th><th>用途</th></tr>
+        <tr><td><code>SecretClient</code></td><td><strong><code>GetSecretAsync()</code></strong></td><td>シークレット取得</td></tr>
+        <tr><td><code>SecretClient</code></td><td><strong><code>SetSecretAsync()</code></strong></td><td>シークレット設定</td></tr>
+        <tr><td><code>KeyVaultSecret</code></td><td><code>.Value</code></td><td>シークレット値の参照</td></tr>
+      </table>
+    </div>
+
+    <h4>Event Hubs / Service Bus</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>サービス</th><th>クラス</th><th>主要メソッド</th></tr>
+        <tr><td>Event Hubs</td><td><code>EventHubProducerClient</code></td><td><strong><code>SendAsync()</code></strong>, <code>CreateBatchAsync()</code></td></tr>
+        <tr><td>Event Hubs</td><td><code>EventProcessorClient</code></td><td><code>ProcessEventAsync</code> (イベントハンドラ)</td></tr>
+        <tr><td>Service Bus</td><td><code>ServiceBusClient</code></td><td><strong><code>CreateSender()</code></strong>, <code>CreateReceiver()</code></td></tr>
+        <tr><td>Service Bus</td><td><code>ServiceBusSender</code></td><td><strong><code>SendMessageAsync()</code></strong></td></tr>
+        <tr><td>Service Bus</td><td><code>ServiceBusReceiver</code></td><td><code>ReceiveMessageAsync()</code>, <code>CompleteMessageAsync()</code></td></tr>
+      </table>
+    </div>
+
+    <h4>Azure CLI コマンド体系</h4>
+    <p>CLI は <code>az &lt;サービス&gt; &lt;リソース&gt; &lt;操作&gt;</code> のパターンです。</p>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>操作</th><th>コマンド</th></tr>
+        <tr><td>Web App 作成</td><td><code>az webapp create</code></td></tr>
+        <tr><td>Function App 作成</td><td><code>az functionapp create</code></td></tr>
+        <tr><td>ACR でビルド</td><td><code>az acr build</code></td></tr>
+        <tr><td>ACI 作成</td><td><code>az container create</code></td></tr>
+        <tr><td>Container App 作成</td><td><code>az containerapp create</code></td></tr>
+        <tr><td>Key Vault シークレット設定</td><td><code>az keyvault secret set</code></td></tr>
+        <tr><td>マネージド ID 割り当て</td><td><code>az webapp identity assign</code></td></tr>
+        <tr><td>スロット作成</td><td><code>az webapp deployment slot create</code></td></tr>
+        <tr><td>スロットスワップ</td><td><code>az webapp deployment slot swap</code></td></tr>
+        <tr><td>CDN パージ</td><td><code>az cdn endpoint purge</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== Pattern 1: Code Fill-in ==================== -->
+  <div class="section">
+    <h3>パターン1: C# コード穴埋め問題</h3>
+
+    <h4>問題 1-1: Blob Storage へのアップロード</h4>
+    <p>次のコードは Azure Blob Storage にファイルをアップロードします。<strong>空欄 (1)(2) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">string</span> <span class="attr">connectionString</span> = <span class="str">"&lt;storage-connection-string&gt;"</span>;
+<span class="kw">string</span> <span class="attr">containerName</span> = <span class="str">"mycontainer"</span>;
+<span class="kw">string</span> <span class="attr">blobName</span> = <span class="str">"example.txt"</span>;
+
+<span class="ty">BlobServiceClient</span> <span class="attr">serviceClient</span> = <span class="kw">new</span> <span class="ty">BlobServiceClient</span>(connectionString);
+<span class="ty">BlobContainerClient</span> <span class="attr">containerClient</span> = serviceClient.<span class="fn">_______(1)_______</span>(containerName);
+<span class="ty">BlobClient</span> <span class="attr">blobClient</span> = containerClient.<span class="fn">GetBlobClient</span>(blobName);
+
+<span class="kw">await</span> blobClient.<span class="fn">_______(2)_______</span>(filePath, <span class="kw">true</span>);</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th></tr>
+        <tr><td>A</td><td><code>GetBlobContainerClient</code></td><td><code>UploadAsync</code></td></tr>
+        <tr><td>B</td><td><code>CreateBlobContainer</code></td><td><code>UploadAsync</code></td></tr>
+        <tr><td>C</td><td><code>GetContainerReference</code></td><td><code>UploadFromFileAsync</code></td></tr>
+        <tr><td>D</td><td><code>GetBlobContainerClient</code></td><td><code>SendAsync</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>GetBlobContainerClient()</code> ― 既存コンテナへの参照を取得（v12 SDK）</li>
+            <li><code>UploadAsync()</code> ― Blob をアップロード（第2引数 <code>true</code> で上書き許可）</li>
+            <li>C は旧 SDK (v11) の API。D の <code>SendAsync</code> は Event Hubs のメソッド</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 1-2: Cosmos DB クエリ</h4>
+    <p>次のコードで Cosmos DB からアイテムを検索します。<strong>空欄 (1)(2) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">CosmosClient</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">CosmosClient</span>(endpoint, key);
+<span class="ty">Container</span> <span class="attr">container</span> = client.<span class="fn">GetContainer</span>(<span class="str">"mydb"</span>, <span class="str">"mycontainer"</span>);
+
+<span class="ty">QueryDefinition</span> <span class="attr">query</span> = <span class="kw">new</span> <span class="ty">QueryDefinition</span>(
+    <span class="str">"SELECT * FROM c WHERE c.category = @category"</span>)
+    .<span class="fn">_______(1)_______</span>(<span class="str">"@category"</span>, <span class="str">"electronics"</span>);
+
+<span class="ty">FeedIterator</span>&lt;<span class="ty">Product</span>&gt; <span class="attr">iterator</span> = container.<span class="fn">_______(2)_______</span>&lt;<span class="ty">Product</span>&gt;(query);
+
+<span class="kw">while</span> (iterator.HasMoreResults)
+{
+    <span class="ty">FeedResponse</span>&lt;<span class="ty">Product</span>&gt; <span class="attr">response</span> = <span class="kw">await</span> iterator.<span class="fn">ReadNextAsync</span>();
+    <span class="kw">foreach</span> (<span class="ty">Product</span> <span class="attr">item</span> <span class="kw">in</span> response)
+    {
+        <span class="ty">Console</span>.<span class="fn">WriteLine</span>(item.Name);
+    }
+}</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th></tr>
+        <tr><td>A</td><td><code>WithParameter</code></td><td><code>GetItemQueryIterator</code></td></tr>
+        <tr><td>B</td><td><code>AddParameter</code></td><td><code>CreateItemQuery</code></td></tr>
+        <tr><td>C</td><td><code>SetParameter</code></td><td><code>GetItemQueryIterator</code></td></tr>
+        <tr><td>D</td><td><code>WithParameter</code></td><td><code>ReadItemAsync</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>WithParameter()</code> ― パラメータ化クエリに値をバインド</li>
+            <li><code>GetItemQueryIterator&lt;T&gt;()</code> ― クエリ結果をページ単位で取得するイテレータを作成</li>
+            <li>D の <code>ReadItemAsync</code> は ID 指定の単一取得で、クエリとは別のメソッド</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 1-3: Key Vault シークレット取得</h4>
+    <p>マネージド ID を使って Key Vault からシークレットを取得します。<strong>空欄 (1)(2) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">var</span> <span class="attr">credential</span> = <span class="kw">new</span> <span class="ty">_______(1)_______</span>();
+<span class="kw">var</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">SecretClient</span>(
+    <span class="kw">new</span> <span class="ty">Uri</span>(<span class="str">"https://myvault.vault.azure.net/"</span>), credential);
+
+<span class="ty">KeyVaultSecret</span> <span class="attr">secret</span> = <span class="kw">await</span> client.<span class="fn">_______(2)_______</span>(<span class="str">"MySecret"</span>);
+<span class="kw">string</span> <span class="attr">secretValue</span> = secret.Value;</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th></tr>
+        <tr><td>A</td><td><code>DefaultAzureCredential</code></td><td><code>GetSecretAsync</code></td></tr>
+        <tr><td>B</td><td><code>ManagedIdentityCredential</code></td><td><code>GetSecretAsync</code></td></tr>
+        <tr><td>C</td><td><code>DefaultAzureCredential</code></td><td><code>ReadSecretAsync</code></td></tr>
+        <tr><td>D</td><td><code>ClientSecretCredential</code></td><td><code>GetSecretAsync</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>DefaultAzureCredential</code> ― マネージド ID、環境変数、VS 認証など複数の方法を自動的に試行する推奨クラス</li>
+            <li><code>GetSecretAsync()</code> ― シークレットの取得メソッド（<code>ReadSecretAsync</code> は存在しない）</li>
+            <li>B の <code>ManagedIdentityCredential</code> も動作するが、<code>DefaultAzureCredential</code> がベストプラクティス</li>
+          </ul>
+          <div class="info-box tip">
+            <strong>DefaultAzureCredential の認証チェーン</strong>
+            環境変数 → マネージド ID → Visual Studio → Azure CLI → Azure PowerShell → Interactive Browser の順に試行します。開発環境と本番環境で同じコードが使えるのが利点です。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 1-4: Service Bus メッセージ送信</h4>
+    <p>Azure Service Bus キューにメッセージを送信します。<strong>空欄 (1)(2) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">await using</span> <span class="kw">var</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">ServiceBusClient</span>(connectionString);
+<span class="ty">ServiceBusSender</span> <span class="attr">sender</span> = client.<span class="fn">_______(1)_______</span>(<span class="str">"myqueue"</span>);
+
+<span class="ty">ServiceBusMessage</span> <span class="attr">message</span> = <span class="kw">new</span> <span class="ty">ServiceBusMessage</span>(<span class="str">"Hello, Service Bus!"</span>);
+<span class="kw">await</span> sender.<span class="fn">_______(2)_______</span>(message);</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th></tr>
+        <tr><td>A</td><td><code>CreateSender</code></td><td><code>SendMessageAsync</code></td></tr>
+        <tr><td>B</td><td><code>GetSender</code></td><td><code>SendMessageAsync</code></td></tr>
+        <tr><td>C</td><td><code>CreateSender</code></td><td><code>SendAsync</code></td></tr>
+        <tr><td>D</td><td><code>CreateProducer</code></td><td><code>PublishAsync</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>CreateSender()</code> ― キューまたはトピックへの送信用クライアントを作成</li>
+            <li><code>SendMessageAsync()</code> ― 単一メッセージの送信（<code>SendAsync</code> は Event Hubs のメソッド）</li>
+            <li>Event Hubs と Service Bus のメソッド名を混同させるのが典型的なひっかけ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 1-5: Event Hubs イベント送信</h4>
+    <p>Azure Event Hubs にイベントを送信します。<strong>空欄 (1)(2)(3) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">await using</span> <span class="kw">var</span> <span class="attr">producer</span> = <span class="kw">new</span> <span class="ty">_______(1)_______</span>(connectionString, eventHubName);
+
+<span class="kw">using</span> <span class="ty">EventDataBatch</span> <span class="attr">batch</span> = <span class="kw">await</span> producer.<span class="fn">_______(2)_______</span>();
+batch.<span class="fn">TryAdd</span>(<span class="kw">new</span> <span class="ty">EventData</span>(<span class="str">"First event"</span>));
+batch.<span class="fn">TryAdd</span>(<span class="kw">new</span> <span class="ty">EventData</span>(<span class="str">"Second event"</span>));
+
+<span class="kw">await</span> producer.<span class="fn">_______(3)_______</span>(batch);</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th><th>(3)</th></tr>
+        <tr><td>A</td><td><code>EventHubProducerClient</code></td><td><code>CreateBatchAsync</code></td><td><code>SendAsync</code></td></tr>
+        <tr><td>B</td><td><code>EventHubClient</code></td><td><code>CreateBatch</code></td><td><code>SendAsync</code></td></tr>
+        <tr><td>C</td><td><code>EventHubProducerClient</code></td><td><code>CreateBatchAsync</code></td><td><code>SendMessageAsync</code></td></tr>
+        <tr><td>D</td><td><code>ServiceBusClient</code></td><td><code>CreateBatchAsync</code></td><td><code>SendAsync</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>EventHubProducerClient</code> ― Event Hubs へのイベント送信用クライアント</li>
+            <li><code>CreateBatchAsync()</code> ― バッチを作成してイベントをまとめる</li>
+            <li><code>SendAsync()</code> ― バッチ送信（Service Bus は <code>SendMessageAsync</code> なので注意）</li>
+          </ul>
+          <div class="info-box warn">
+            <strong>Event Hubs vs Service Bus のメソッド名の違い</strong>
+            Event Hubs: <code>SendAsync(batch)</code><br>
+            Service Bus: <code>SendMessageAsync(message)</code> / <code>SendMessagesAsync(batch)</code><br>
+            この違いは試験で頻繁にひっかけとして利用されます。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 1-6: Application Insights カスタムメトリック</h4>
+    <p>Application Insights でカスタムメトリックを記録します。<strong>正しいコードはどれですか？</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - 選択肢 A</span><button class="copy-btn">Copy</button></div>
+<pre>telemetryClient.<span class="fn">TrackEvent</span>(<span class="str">"PageLoadTime"</span>, <span class="num">150</span>);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - 選択肢 B</span><button class="copy-btn">Copy</button></div>
+<pre>telemetryClient.<span class="fn">TrackMetric</span>(<span class="str">"PageLoadTime"</span>, <span class="num">150</span>);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - 選択肢 C（推奨）</span><button class="copy-btn">Copy</button></div>
+<pre>telemetryClient.<span class="fn">GetMetric</span>(<span class="str">"PageLoadTime"</span>).<span class="fn">TrackValue</span>(<span class="num">150</span>);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - 選択肢 D</span><button class="copy-btn">Copy</button></div>
+<pre>telemetryClient.<span class="fn">TrackTrace</span>(<span class="str">"PageLoadTime"</span>);</pre>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: C</strong></p>
+          <ul>
+            <li><code>GetMetric().TrackValue()</code> が推奨される方法</li>
+            <li><code>TrackMetric()</code> は非推奨（deprecated）</li>
+            <li><code>GetMetric()</code> はローカルで事前集約を行うためパフォーマンスが優れている</li>
+            <li><code>TrackEvent</code> はイベント記録用、<code>TrackTrace</code> はログ用で、メトリックではない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Pattern 2: CLI Fill-in ==================== -->
+  <div class="section">
+    <h3>パターン2: Azure CLI 穴埋め問題</h3>
+
+    <h4>問題 2-1: ACR ビルドとデプロイ</h4>
+    <p>ACR にイメージをビルドし、App Service にデプロイします。<strong>空欄 (1) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># ACR にイメージをビルド</span>
+az acr <span class="fn">_______(1)_______</span> --registry myregistry --image myapp:v1 .
+
+<span class="cm"># App Service にデプロイ</span>
+az webapp create \
+  --resource-group myRG \
+  --plan myPlan \
+  --name myWebApp \
+  --deployment-container-image-name myregistry.azurecr.io/myapp:v1</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>コマンド</th></tr>
+        <tr><td>A</td><td><code>build</code></td></tr>
+        <tr><td>B</td><td><code>push</code></td></tr>
+        <tr><td>C</td><td><code>import</code></td></tr>
+        <tr><td>D</td><td><code>create</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>az acr build</code> ― ACR Tasks を使ってクラウド上でイメージをビルド＆プッシュ</li>
+            <li>ローカルに Docker がなくても実行可能（これが試験ポイント）</li>
+            <li><code>import</code> は他のレジストリからイメージをインポートする操作</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 2-2: Key Vault とマネージド ID</h4>
+    <p>Key Vault にシークレットを登録し、App Service にマネージド ID を割り当てます。<strong>空欄 (1)(2) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># Key Vault を作成</span>
+az keyvault create --name myVault --resource-group myRG --location eastus
+
+<span class="cm"># シークレットを登録</span>
+az keyvault <span class="fn">_______(1)_______</span> set --vault-name myVault \
+  --name <span class="str">"DbPassword"</span> --value <span class="str">"P@ssw0rd"</span>
+
+<span class="cm"># App Service にマネージド ID を割り当て</span>
+az webapp identity <span class="fn">_______(2)_______</span> --name myWebApp --resource-group myRG</pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th></tr>
+        <tr><td>A</td><td><code>secret</code></td><td><code>assign</code></td></tr>
+        <tr><td>B</td><td><code>key</code></td><td><code>assign</code></td></tr>
+        <tr><td>C</td><td><code>secret</code></td><td><code>create</code></td></tr>
+        <tr><td>D</td><td><code>certificate</code></td><td><code>assign</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>az keyvault secret set</code> ― シークレットの登録/更新</li>
+            <li><code>az webapp identity assign</code> ― システム割り当てマネージド ID を有効化</li>
+            <li>Key Vault には <code>secret</code>(パスワード等)、<code>key</code>(暗号化鍵)、<code>certificate</code>(証明書) の3種類がある</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 2-3: Container Apps のデプロイ</h4>
+    <p>Container Apps 環境を作成し、アプリをデプロイします。<strong>空欄 (1)(2) を埋めてください。</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># Container Apps 環境の作成</span>
+az containerapp <span class="fn">_______(1)_______</span> create \
+  --name myEnvironment \
+  --resource-group myRG \
+  --location japaneast
+
+<span class="cm"># Container App の作成</span>
+az containerapp create \
+  --name myapp \
+  --resource-group myRG \
+  --environment myEnvironment \
+  --image myregistry.azurecr.io/myapp:v1 \
+  --target-port <span class="num">80</span> \
+  --ingress <span class="fn">_______(2)_______</span> \
+  --min-replicas <span class="num">0</span> --max-replicas <span class="num">10</span></pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>選択肢</th><th>(1)</th><th>(2)</th></tr>
+        <tr><td>A</td><td><code>env</code></td><td><code>external</code></td></tr>
+        <tr><td>B</td><td><code>environment</code></td><td><code>external</code></td></tr>
+        <tr><td>C</td><td><code>env</code></td><td><code>public</code></td></tr>
+        <tr><td>D</td><td><code>env</code></td><td><code>enabled</code></td></tr>
+      </table>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A</strong></p>
+          <ul>
+            <li><code>az containerapp env create</code> ― Container Apps 環境を作成（<code>env</code> が正しい）</li>
+            <li><code>--ingress external</code> ― インターネットからアクセス可能にする（<code>internal</code> は VNet 内のみ）</li>
+            <li><code>public</code> や <code>enabled</code> はイングレスの有効な値ではない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Pattern 3: Code Ordering ==================== -->
+  <div class="section">
+    <h3>パターン3: コード並べ替え問題</h3>
+
+    <h4>問題 3-1: SAS トークンの生成</h4>
+    <p>Blob の SAS URI を生成するコードブロックを<strong>正しい順序に並べてください。</strong></p>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック A</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">BlobSasBuilder</span> <span class="attr">sasBuilder</span> = <span class="kw">new</span> <span class="ty">BlobSasBuilder</span>()
+{
+    BlobContainerName = containerName,
+    BlobName = blobName,
+    ExpiresOn = <span class="ty">DateTimeOffset</span>.UtcNow.<span class="fn">AddHours</span>(<span class="num">1</span>)
+};</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック B</span><button class="copy-btn">Copy</button></div>
+<pre>sasBuilder.<span class="fn">SetPermissions</span>(<span class="ty">BlobSasPermissions</span>.Read);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック C</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">BlobClient</span> <span class="attr">blobClient</span> = containerClient.<span class="fn">GetBlobClient</span>(blobName);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック D</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">Uri</span> <span class="attr">sasUri</span> = blobClient.<span class="fn">GenerateSasUri</span>(sasBuilder);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック E</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">BlobServiceClient</span> <span class="attr">serviceClient</span> = <span class="kw">new</span> <span class="ty">BlobServiceClient</span>(connectionString);
+<span class="ty">BlobContainerClient</span> <span class="attr">containerClient</span> = serviceClient.<span class="fn">GetBlobContainerClient</span>(containerName);</pre>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: E → C → A → B → D</strong></p>
+          <ol>
+            <li><strong>E</strong>: サービスクライアント・コンテナクライアントを作成</li>
+            <li><strong>C</strong>: BlobClient を取得</li>
+            <li><strong>A</strong>: SasBuilder を構築（コンテナ名、Blob名、有効期限）</li>
+            <li><strong>B</strong>: SAS の権限を設定</li>
+            <li><strong>D</strong>: SAS URI を生成</li>
+          </ol>
+          <p>ポイント: <code>GenerateSasUri()</code> を呼ぶ前に、SasBuilder の設定が完了している必要があります。</p>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 3-2: Cosmos DB アイテム作成の順序</h4>
+    <p>Cosmos DB にアイテムを作成するコードブロックを<strong>正しい順序に並べてください。</strong></p>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック A</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">Container</span> <span class="attr">container</span> = database.<span class="fn">GetContainer</span>(<span class="str">"products"</span>);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック B</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">ItemResponse</span>&lt;<span class="ty">Product</span>&gt; <span class="attr">response</span> = <span class="kw">await</span> container.<span class="fn">CreateItemAsync</span>(
+    newProduct, <span class="kw">new</span> <span class="ty">PartitionKey</span>(newProduct.Category));</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック C</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">CosmosClient</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">CosmosClient</span>(endpoint, key);</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック D</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">Product</span> <span class="attr">newProduct</span> = <span class="kw">new</span> <span class="ty">Product</span>
+{
+    Id = <span class="ty">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>(),
+    Name = <span class="str">"Widget"</span>,
+    Category = <span class="str">"electronics"</span>
+};</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - ブロック E</span><button class="copy-btn">Copy</button></div>
+<pre><span class="ty">Database</span> <span class="attr">database</span> = client.<span class="fn">GetDatabase</span>(<span class="str">"mydb"</span>);</pre>
+    </div>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: C → E → A → D → B</strong></p>
+          <ol>
+            <li><strong>C</strong>: CosmosClient を作成</li>
+            <li><strong>E</strong>: Database 参照を取得</li>
+            <li><strong>A</strong>: Container 参照を取得</li>
+            <li><strong>D</strong>: 保存するオブジェクトを作成</li>
+            <li><strong>B</strong>: <code>CreateItemAsync</code> でアイテムを作成（PartitionKey が必須）</li>
+          </ol>
+          <p>ポイント: <code>CreateItemAsync</code> の第2引数に <code>PartitionKey</code> を指定する必要があります。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Pattern 4: Code Validation ==================== -->
+  <div class="section">
+    <h3>パターン4: コード正誤判定問題</h3>
+
+    <h4>問題 4-1: Azure Functions バインディング</h4>
+    <p><strong>要件:</strong> Queue Storage にメッセージが追加されたとき、その内容を Blob Storage に書き出す。</p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre>[<span class="ty">FunctionName</span>(<span class="str">"QueueToBlob"</span>)]
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="fn">Run</span>(
+    [<span class="ty">QueueTrigger</span>(<span class="str">"input-queue"</span>)] <span class="kw">string</span> <span class="attr">queueMessage</span>,
+    [<span class="ty">Blob</span>(<span class="str">"output-container/{rand-guid}.txt"</span>,
+      FileAccess.Write)] <span class="ty">TextWriter</span> <span class="attr">outputBlob</span>,
+    <span class="ty">ILogger</span> <span class="attr">log</span>)
+{
+    outputBlob.<span class="fn">Write</span>(queueMessage);
+    log.<span class="fn">LogInformation</span>(<span class="str">$"Processed: {queueMessage}"</span>);
+}</pre>
+    </div>
+
+    <p><strong>このコードは要件を満たしますか？</strong></p>
+    <ul>
+      <li>A) はい</li>
+      <li>B) いいえ。QueueTrigger のバインディングが間違っている</li>
+      <li>C) いいえ。Blob 出力バインディングの FileAccess を Connection に変更する必要がある</li>
+      <li>D) いいえ。TextWriter ではなく Stream を使用する必要がある</li>
+    </ul>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A（はい、要件を満たす）</strong></p>
+          <ul>
+            <li><code>QueueTrigger</code> でキューメッセージを受信 ✓</li>
+            <li><code>Blob</code> 出力バインディングで <code>{rand-guid}</code> により一意の名前を生成 ✓</li>
+            <li><code>TextWriter</code> は文字列出力に有効なバインディング型 ✓</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h4>問題 4-2: Cosmos DB 変更フィードの処理</h4>
+    <p><strong>要件:</strong> Cosmos DB の <code>orders</code> コンテナのドキュメントが変更されたとき、変更内容をログに記録する。</p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre>[<span class="ty">FunctionName</span>(<span class="str">"OrderChangeFeed"</span>)]
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="fn">Run</span>(
+    [<span class="ty">CosmosDBTrigger</span>(
+      databaseName: <span class="str">"mydb"</span>,
+      containerName: <span class="str">"orders"</span>,
+      Connection = <span class="str">"CosmosDBConnection"</span>,
+      LeaseContainerName = <span class="str">"leases"</span>,
+      CreateLeaseContainerIfNotExists = <span class="kw">true</span>)]
+    IReadOnlyList&lt;<span class="ty">Document</span>&gt; <span class="attr">changes</span>,
+    <span class="ty">ILogger</span> <span class="attr">log</span>)
+{
+    <span class="kw">foreach</span> (<span class="kw">var</span> <span class="attr">doc</span> <span class="kw">in</span> changes)
+    {
+        log.<span class="fn">LogInformation</span>(<span class="str">$"Changed document Id: {doc.Id}"</span>);
+    }
+}</pre>
+    </div>
+
+    <p><strong>このコードは要件を満たしますか？</strong></p>
+    <ul>
+      <li>A) はい</li>
+      <li>B) いいえ。LeaseContainerName が不要</li>
+      <li>C) いいえ。CosmosDBTrigger ではなく ChangeFeedTrigger を使う必要がある</li>
+      <li>D) いいえ。Connection はアプリケーション設定名ではなく接続文字列を直接指定する必要がある</li>
+    </ul>
+
+    <div class="accordion-group">
+      <div class="accordion-item">
+        <button class="accordion-btn">解答と解説 <span class="arrow">&#9660;</span></button>
+        <div class="accordion-content">
+          <p><strong>正解: A（はい、要件を満たす）</strong></p>
+          <ul>
+            <li><code>CosmosDBTrigger</code> は変更フィードを監視する正しいトリガー ✓</li>
+            <li><code>LeaseContainerName</code> は変更フィードの進行状況を追跡するために必要 ✓</li>
+            <li><code>Connection</code> にはアプリ設定名を指定する（接続文字列ではない） ✓</li>
+            <li><code>CreateLeaseContainerIfNotExists = true</code> でリースコンテナを自動作成 ✓</li>
+          </ul>
+          <div class="info-box note">
+            <strong>リースコンテナとは？</strong>
+            変更フィードの処理位置を追跡するためのコンテナです。複数の Functions インスタンスが変更フィードを処理する場合に、処理の重複を防ぎます。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Key Comparison ==================== -->
+  <div class="section">
+    <h3>混同しやすい API の比較表</h3>
+    <p>試験で最もひっかけに使われる、似て非なる API の比較です。</p>
+
+    <h4>送信系メソッドの比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>サービス</th><th>クライアントクラス</th><th>送信メソッド</th><th>バッチ送信</th></tr>
+        <tr><td>Service Bus</td><td><code>ServiceBusSender</code></td><td><code>SendMessageAsync()</code></td><td><code>SendMessagesAsync()</code></td></tr>
+        <tr><td>Event Hubs</td><td><code>EventHubProducerClient</code></td><td><code>SendAsync()</code></td><td><code>SendAsync(batch)</code></td></tr>
+        <tr><td>Queue Storage</td><td><code>QueueClient</code></td><td><code>SendMessageAsync()</code></td><td>―</td></tr>
+      </table>
+    </div>
+
+    <h4>クライアント生成パターンの比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>サービス</th><th>トップレベル</th><th>子リソース取得</th></tr>
+        <tr><td>Blob Storage</td><td><code>new BlobServiceClient(conn)</code></td><td><code>.GetBlobContainerClient(name)</code></td></tr>
+        <tr><td>Cosmos DB</td><td><code>new CosmosClient(endpoint, key)</code></td><td><code>.GetDatabase(name).GetContainer(name)</code></td></tr>
+        <tr><td>Key Vault</td><td><code>new SecretClient(uri, credential)</code></td><td>― (直接操作)</td></tr>
+        <tr><td>Service Bus</td><td><code>new ServiceBusClient(conn)</code></td><td><code>.CreateSender(name)</code></td></tr>
+        <tr><td>Event Hubs</td><td><code>new EventHubProducerClient(conn, name)</code></td><td>― (コンストラクタで指定)</td></tr>
+      </table>
+    </div>
+
+    <h4>Functions トリガーと属性の比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>トリガー</th><th>属性名</th><th>必須パラメータ</th></tr>
+        <tr><td>HTTP</td><td><code>[HttpTrigger]</code></td><td><code>AuthorizationLevel</code>, メソッド</td></tr>
+        <tr><td>Timer</td><td><code>[TimerTrigger]</code></td><td>CRON 式</td></tr>
+        <tr><td>Blob</td><td><code>[BlobTrigger]</code></td><td>パス（<code>container/blob</code>）</td></tr>
+        <tr><td>Queue</td><td><code>[QueueTrigger]</code></td><td>キュー名</td></tr>
+        <tr><td>Cosmos DB</td><td><code>[CosmosDBTrigger]</code></td><td>DB名, コンテナ名, Connection, LeaseContainerName</td></tr>
+        <tr><td>Service Bus</td><td><code>[ServiceBusTrigger]</code></td><td>キュー名またはトピック名, Connection</td></tr>
+        <tr><td>Event Grid</td><td><code>[EventGridTrigger]</code></td><td>― (自動)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== Tips ==================== -->
+  <div class="section">
+    <h3>コードスニペット問題の攻略法</h3>
+
+    <div class="info-box tip">
+      <strong>1. SDK v12 のメソッド名を正確に覚える</strong>
+      旧 SDK (v11) との違いがひっかけに使われます。特に Blob Storage の <code>GetBlobContainerClient</code> vs <code>GetContainerReference</code> に注意。
+    </div>
+
+    <div class="info-box tip">
+      <strong>2. Event Hubs と Service Bus のメソッド名を区別する</strong>
+      Event Hubs: <code>SendAsync()</code> / Service Bus: <code>SendMessageAsync()</code>。1単語の違いが正誤を分けます。
+    </div>
+
+    <div class="info-box tip">
+      <strong>3. DefaultAzureCredential を覚える</strong>
+      マネージド ID のコード問題では、<code>DefaultAzureCredential</code> が正解になることがほとんど。開発環境でも本番環境でも同じコードが使えるのがポイント。
+    </div>
+
+    <div class="info-box tip">
+      <strong>4. CLI のサブコマンド構造を把握する</strong>
+      <code>az &lt;service&gt; &lt;resource&gt; &lt;action&gt;</code> のパターン。特に <code>az acr build</code>（クラウドビルド）、<code>az webapp identity assign</code>（マネージド ID）は頻出。
+    </div>
+
+    <div class="info-box tip">
+      <strong>5. Functions のバインディング属性を整理する</strong>
+      トリガー属性名、必須パラメータ、バインディング可能な型（<code>string</code>, <code>Stream</code>, <code>TextWriter</code> 等）を把握しましょう。
+    </div>
+
+    <div class="info-box tip">
+      <strong>6. 消去法を活用する</strong>
+      わからない問題でも、明らかに間違っている選択肢（存在しないメソッド名、別サービスの API）を除外することで正答率が上がります。
+    </div>
+  </div>
+
+  <!-- ==================== Quiz ==================== -->
+  <div class="quiz-section" data-module="code-snippets">
+    <h3>&#128221; 確認テスト</h3>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q1</span>
+      <p class="q-text">Blob Storage v12 SDK でコンテナクライアントを取得するメソッドはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq1" value="a"> GetBlobContainerClient()</label></li>
+        <li><label><input type="radio" name="csq1" value="b"> GetContainerReference()</label></li>
+        <li><label><input type="radio" name="csq1" value="c"> CreateBlobContainer()</label></li>
+        <li><label><input type="radio" name="csq1" value="d"> GetContainer()</label></li>
+      </ul>
+      <div class="q-explanation">v12 SDK では <code>GetBlobContainerClient()</code> を使用します。<code>GetContainerReference()</code> は旧 v11 SDK のメソッドです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q2</span>
+      <p class="q-text">Cosmos DB でパラメータ化クエリにパラメータをバインドするメソッドはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq2" value="a"> AddParameter()</label></li>
+        <li><label><input type="radio" name="csq2" value="b"> SetParameter()</label></li>
+        <li><label><input type="radio" name="csq2" value="c"> WithParameter()</label></li>
+        <li><label><input type="radio" name="csq2" value="d"> BindParameter()</label></li>
+      </ul>
+      <div class="q-explanation"><code>QueryDefinition.WithParameter()</code> でパラメータをバインドします。他のメソッド名は存在しません。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q3</span>
+      <p class="q-text">Azure Service Bus でメッセージを送信するメソッドはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq3" value="a"> SendAsync()</label></li>
+        <li><label><input type="radio" name="csq3" value="b"> SendMessageAsync()</label></li>
+        <li><label><input type="radio" name="csq3" value="c"> PublishAsync()</label></li>
+        <li><label><input type="radio" name="csq3" value="d"> SendEventAsync()</label></li>
+      </ul>
+      <div class="q-explanation">Service Bus は <code>SendMessageAsync()</code>、Event Hubs は <code>SendAsync()</code> です。この違いは頻出のひっかけです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q4</span>
+      <p class="q-text">Key Vault にマネージド ID でアクセスする際に推奨される認証クラスはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq4" value="a"> ClientSecretCredential</label></li>
+        <li><label><input type="radio" name="csq4" value="b"> ManagedIdentityCredential</label></li>
+        <li><label><input type="radio" name="csq4" value="c"> InteractiveBrowserCredential</label></li>
+        <li><label><input type="radio" name="csq4" value="d"> DefaultAzureCredential</label></li>
+      </ul>
+      <div class="q-explanation"><code>DefaultAzureCredential</code> は複数の認証方法を自動的に試行する推奨クラスです。開発環境でも本番環境でも同じコードが使えます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q5</span>
+      <p class="q-text"><code>az acr build</code> コマンドの特徴として正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq5" value="a"> ローカルに Docker がなくてもクラウドでビルドできる</label></li>
+        <li><label><input type="radio" name="csq5" value="b"> ローカルの Docker デーモンが必須</label></li>
+        <li><label><input type="radio" name="csq5" value="c"> Premium SKU でのみ利用可能</label></li>
+        <li><label><input type="radio" name="csq5" value="d"> ビルドのみでプッシュは行われない</label></li>
+      </ul>
+      <div class="q-explanation"><code>az acr build</code> は ACR Tasks を使ってクラウド上でイメージをビルド＆プッシュします。ローカルに Docker は不要で、全 SKU で利用可能です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q6</span>
+      <p class="q-text">Application Insights でカスタムメトリックを記録する推奨メソッドはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq6" value="a"> TrackMetric()</label></li>
+        <li><label><input type="radio" name="csq6" value="b"> TrackEvent()</label></li>
+        <li><label><input type="radio" name="csq6" value="c"> GetMetric().TrackValue()</label></li>
+        <li><label><input type="radio" name="csq6" value="d"> TrackTrace()</label></li>
+      </ul>
+      <div class="q-explanation"><code>GetMetric().TrackValue()</code> が推奨。<code>TrackMetric()</code> は非推奨です。<code>GetMetric()</code> はローカルで事前集約するためパフォーマンスに優れています。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q7</span>
+      <p class="q-text">Azure Functions の CosmosDBTrigger で、変更フィードの処理位置を追跡するために必要なものは？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq7" value="a"> ChangeTracker コンテナ</label></li>
+        <li><label><input type="radio" name="csq7" value="b"> リースコンテナ (LeaseContainerName)</label></li>
+        <li><label><input type="radio" name="csq7" value="c"> チェックポイントテーブル</label></li>
+        <li><label><input type="radio" name="csq7" value="d"> オフセットストレージ</label></li>
+      </ul>
+      <div class="q-explanation">CosmosDBTrigger ではリースコンテナ（<code>LeaseContainerName</code>）が必要です。これにより変更フィードの処理済み位置が追跡されます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q8</span>
+      <p class="q-text">Cosmos DB で単一アイテムを ID で読み取る際に必須のパラメータは？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq8" value="a"> PartitionKey</label></li>
+        <li><label><input type="radio" name="csq8" value="b"> ETag</label></li>
+        <li><label><input type="radio" name="csq8" value="c"> ConsistencyLevel</label></li>
+        <li><label><input type="radio" name="csq8" value="d"> RequestCharge</label></li>
+      </ul>
+      <div class="q-explanation"><code>ReadItemAsync&lt;T&gt;(id, new PartitionKey(value))</code> ― パーティションキーは必須です。省略すると例外がスローされます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q9</span>
+      <p class="q-text">Container Apps の ingress を外部公開にする <code>--ingress</code> の正しい値は？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq9" value="a"> public</label></li>
+        <li><label><input type="radio" name="csq9" value="b"> enabled</label></li>
+        <li><label><input type="radio" name="csq9" value="c"> internet</label></li>
+        <li><label><input type="radio" name="csq9" value="d"> external</label></li>
+      </ul>
+      <div class="q-explanation"><code>--ingress external</code> で外部公開、<code>--ingress internal</code> で VNet 内のみのアクセスになります。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q10</span>
+      <p class="q-text">Event Hubs でイベントを送信する前にバッチを作成するメソッドは？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="csq10" value="a"> CreateMessageBatch()</label></li>
+        <li><label><input type="radio" name="csq10" value="b"> CreateEventBatch()</label></li>
+        <li><label><input type="radio" name="csq10" value="c"> CreateBatchAsync()</label></li>
+        <li><label><input type="radio" name="csq10" value="d"> GetBatchAsync()</label></li>
+      </ul>
+      <div class="q-explanation"><code>EventHubProducerClient.CreateBatchAsync()</code> でバッチを作成し、<code>TryAdd()</code> でイベントを追加、<code>SendAsync()</code> で送信します。</div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn btn-primary quiz-check">採点する</button>
+      <button class="btn btn-secondary quiz-reset">リセット</button>
+    </div>
+    <div class="quiz-result"></div>
+  </div>
+
+  <div class="page-nav">
+    <a href="integration.html" class="btn btn-secondary">&larr; サービス連携</a>
+    <a href="index.html" class="btn btn-primary">ホーム &rarr;</a>
+  </div>
+
+  <footer class="site-footer">AZ-204 学習ガイド &copy; 2026</footer>
+</main>
+
+<button class="scroll-top" aria-label="ページ上部へ">&#8679;</button>
+<script src="js/app.js"></script>
+</body>
+</html>
