@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>セキュリティ | AZ-204 学習ガイド</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <button class="hamburger" aria-label="メニュー">&#9776;</button>
+  <h1>AZ-204 <span>Azure Developer Associate</span></h1>
+  <div class="header-actions">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切替">&#127769;</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">ホーム</div>
+    <a href="index.html"><span class="nav-icon">&#127968;</span> ダッシュボード</a>
+    <div class="sidebar-section-title">試験範囲</div>
+    <a href="compute.html"><span class="nav-icon">&#9881;</span> コンピューティング <span class="nav-badge">25-30%</span></a>
+    <a href="storage.html"><span class="nav-icon">&#128451;</span> ストレージ <span class="nav-badge">15-20%</span></a>
+    <a href="security.html"><span class="nav-icon">&#128274;</span> セキュリティ <span class="nav-badge">20-25%</span></a>
+    <a href="monitor.html"><span class="nav-icon">&#128200;</span> 監視・最適化 <span class="nav-badge">15-20%</span></a>
+    <a href="integration.html"><span class="nav-icon">&#128279;</span> サービス連携 <span class="nav-badge">15-20%</span></a>
+  </div>
+</nav>
+<div class="sidebar-overlay"></div>
+<div class="reading-progress" style="width:0"></div>
+
+<main class="main-content">
+  <div class="breadcrumb"><a href="index.html">ホーム</a> &gt; セキュリティ</div>
+  <div class="module-header">
+    <h2>&#128274; Azure セキュリティの実装</h2>
+    <div class="subtitle">出題比率: 20-25%</div>
+  </div>
+
+  <!-- ==================== Identity Platform ==================== -->
+  <div class="section">
+    <h3>1. Microsoft Identity Platform</h3>
+    <p>Microsoft Identity Platform は、OAuth 2.0 / OpenID Connect に準拠した認証・認可プラットフォームです。</p>
+
+    <h4>アプリ登録</h4>
+    <p>Azure ポータルで「アプリの登録」を行い、クライアントID・テナントID・リダイレクトURIを設定します。</p>
+    <ul>
+      <li><strong>クライアントID (Application ID)</strong>: アプリの一意識別子</li>
+      <li><strong>テナントID (Directory ID)</strong>: Azure AD テナントの識別子</li>
+      <li><strong>リダイレクトURI</strong>: 認証後のリダイレクト先</li>
+      <li><strong>クライアントシークレット / 証明書</strong>: サーバーアプリの認証に使用</li>
+    </ul>
+
+    <h4>OAuth 2.0 フロー</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>フロー</th><th>用途</th><th>トークン</th></tr>
+        <tr><td>Authorization Code</td><td>Web アプリ（サーバーサイド）</td><td>ID + Access + Refresh</td></tr>
+        <tr><td>Authorization Code + PKCE</td><td>SPA / モバイルアプリ</td><td>ID + Access + Refresh</td></tr>
+        <tr><td>Client Credentials</td><td>デーモン / バックエンドサービス</td><td>Access のみ</td></tr>
+        <tr><td>Device Code</td><td>入力制約のあるデバイス</td><td>ID + Access + Refresh</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box important">
+      <strong>試験ポイント</strong>
+      Client Credentials フローはユーザーの操作なしにアプリケーション自体として認証します。Delegated（委任）権限は使えず、Application 権限のみ使用できます。
+    </div>
+
+    <h4>MSAL（Microsoft Authentication Library）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// パブリッククライアント（デスクトップ/モバイル）</span>
+<span class="kw">var</span> <span class="attr">app</span> = <span class="ty">PublicClientApplicationBuilder</span>
+    .<span class="fn">Create</span>(<span class="str">"clientId"</span>)
+    .<span class="fn">WithAuthority</span>(<span class="ty">AzureCloudInstance</span>.AzurePublic, <span class="str">"tenantId"</span>)
+    .<span class="fn">WithRedirectUri</span>(<span class="str">"http://localhost"</span>)
+    .<span class="fn">Build</span>();
+
+<span class="kw">var</span> <span class="attr">result</span> = <span class="kw">await</span> app.<span class="fn">AcquireTokenInteractive</span>(scopes)
+    .<span class="fn">ExecuteAsync</span>();
+<span class="kw">string</span> <span class="attr">token</span> = result.AccessToken;
+
+<span class="cm">// コンフィデンシャルクライアント（Web アプリ / デーモン）</span>
+<span class="kw">var</span> <span class="attr">app</span> = <span class="ty">ConfidentialClientApplicationBuilder</span>
+    .<span class="fn">Create</span>(<span class="str">"clientId"</span>)
+    .<span class="fn">WithClientSecret</span>(<span class="str">"clientSecret"</span>)
+    .<span class="fn">WithAuthority</span>(<span class="kw">new</span> <span class="ty">Uri</span>(<span class="str">"https://login.microsoftonline.com/tenantId"</span>))
+    .<span class="fn">Build</span>();
+
+<span class="cm">// Client Credentials フロー</span>
+<span class="kw">var</span> <span class="attr">result</span> = <span class="kw">await</span> app.<span class="fn">AcquireTokenForClient</span>(scopes)
+    .<span class="fn">ExecuteAsync</span>();</pre>
+    </div>
+
+    <div class="info-box note">
+      <strong>MSAL のクライアント種別</strong>
+      <code>PublicClientApplication</code>: ユーザーがいるクライアント（デスクトップ、モバイル、SPA）。
+      <code>ConfidentialClientApplication</code>: シークレットを安全に保持できるサーバーアプリ（Web アプリ、デーモン）。
+    </div>
+
+    <h4>トークンの種類</h4>
+    <ul>
+      <li><strong>ID トークン</strong>: ユーザーの認証情報（JWT形式、クレーム含む）</li>
+      <li><strong>アクセストークン</strong>: API へのアクセス許可（スコープ/権限情報含む）</li>
+      <li><strong>リフレッシュトークン</strong>: 新しいアクセストークンを取得するために使用</li>
+    </ul>
+  </div>
+
+  <!-- ==================== Microsoft Graph ==================== -->
+  <div class="section">
+    <h3>2. Microsoft Graph</h3>
+    <p>Microsoft Graph は、Microsoft 365 のデータにアクセスするための統一 API です。</p>
+
+    <h4>エンドポイント</h4>
+    <ul>
+      <li>ベースURL: <code>https://graph.microsoft.com/v1.0</code>（安定版）, <code>/beta</code>（プレビュー）</li>
+      <li>ユーザー情報: <code>GET /me</code></li>
+      <li>メール: <code>GET /me/messages</code></li>
+      <li>ファイル: <code>GET /me/drive/root/children</code></li>
+    </ul>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// Graph SDK の使用</span>
+<span class="kw">var</span> <span class="attr">credential</span> = <span class="kw">new</span> <span class="ty">ClientSecretCredential</span>(
+    <span class="str">"tenantId"</span>, <span class="str">"clientId"</span>, <span class="str">"clientSecret"</span>);
+<span class="kw">var</span> <span class="attr">graphClient</span> = <span class="kw">new</span> <span class="ty">GraphServiceClient</span>(credential);
+
+<span class="cm">// ユーザー情報の取得</span>
+<span class="kw">var</span> <span class="attr">user</span> = <span class="kw">await</span> graphClient.Me.<span class="fn">GetAsync</span>();
+Console.<span class="fn">WriteLine</span>(user.DisplayName);</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Key Vault ==================== -->
+  <div class="section">
+    <h3>3. Azure Key Vault</h3>
+    <p>Key Vault は、シークレット、暗号化キー、SSL証明書を安全に管理するサービスです。</p>
+
+    <h4>管理対象</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>種類</th><th>説明</th><th>例</th></tr>
+        <tr><td>シークレット</td><td>文字列値（パスワード、接続文字列等）</td><td>DB パスワード、API キー</td></tr>
+        <tr><td>キー</td><td>暗号化キー（RSA、EC）</td><td>データ暗号化、署名</td></tr>
+        <tr><td>証明書</td><td>X.509 証明書の管理と自動更新</td><td>SSL/TLS 証明書</td></tr>
+      </table>
+    </div>
+
+    <h4>アクセス制御</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>方式</th><th>推奨度</th><th>特徴</th></tr>
+        <tr><td>Azure RBAC</td><td>推奨</td><td>管理プレーンとデータプレーンの両方を制御。きめ細かい権限設定</td></tr>
+        <tr><td>アクセスポリシー</td><td>レガシー</td><td>Vault レベルの権限設定。個別操作の制御が限定的</td></tr>
+      </table>
+    </div>
+
+    <h4>.NET SDK での操作</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// SecretClient の作成（マネージドIDを使用）</span>
+<span class="kw">var</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">SecretClient</span>(
+    <span class="kw">new</span> <span class="ty">Uri</span>(<span class="str">"https://myvault.vault.azure.net/"</span>),
+    <span class="kw">new</span> <span class="ty">DefaultAzureCredential</span>());
+
+<span class="cm">// シークレットの取得</span>
+<span class="ty">KeyVaultSecret</span> <span class="attr">secret</span> = <span class="kw">await</span> client.<span class="fn">GetSecretAsync</span>(<span class="str">"MySecret"</span>);
+<span class="kw">string</span> <span class="attr">value</span> = secret.Value;
+
+<span class="cm">// シークレットの設定</span>
+<span class="kw">await</span> client.<span class="fn">SetSecretAsync</span>(<span class="str">"MySecret"</span>, <span class="str">"newSecretValue"</span>);
+
+<span class="cm">// シークレットの削除（ソフトデリート）</span>
+<span class="ty">DeleteSecretOperation</span> <span class="attr">operation</span> = <span class="kw">await</span> client.<span class="fn">StartDeleteSecretAsync</span>(<span class="str">"MySecret"</span>);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># Key Vault の作成</span>
+az keyvault create --name myVault --resource-group myRG --location japaneast
+
+<span class="cm"># シークレットの設定</span>
+az keyvault secret set --vault-name myVault --name MySecret --value <span class="str">"secretValue"</span>
+
+<span class="cm"># シークレットの取得</span>
+az keyvault secret show --vault-name myVault --name MySecret</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Managed Identity ==================== -->
+  <div class="section">
+    <h3>4. マネージドID（Managed Identity）</h3>
+    <p>マネージドID は、Azure サービスが他の Azure リソースに安全にアクセスするための機能です。資格情報の管理が不要です。</p>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>種類</th><th>ライフサイクル</th><th>共有</th><th>ユースケース</th></tr>
+        <tr><td>システム割り当て</td><td>リソースと同じ（削除で消滅）</td><td>不可（1対1）</td><td>単一リソース用</td></tr>
+        <tr><td>ユーザー割り当て</td><td>独立（個別に管理）</td><td>可（複数リソースで共有）</td><td>複数リソースで同一権限</td></tr>
+      </table>
+    </div>
+
+    <h4>DefaultAzureCredential</h4>
+    <p><code>DefaultAzureCredential</code> は、複数の認証方法を自動的に試行するクラスです。</p>
+    <div class="info-box tip">
+      <strong>認証チェーンの順序</strong>
+      環境変数 → Workload Identity → Managed Identity → Azure CLI → Azure PowerShell → Interactive Browser の順に試行されます。ローカル開発では Azure CLI、本番環境ではマネージドIDが自動的に使われます。
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// DefaultAzureCredential で Key Vault にアクセス</span>
+<span class="kw">var</span> <span class="attr">credential</span> = <span class="kw">new</span> <span class="ty">DefaultAzureCredential</span>();
+
+<span class="cm">// Key Vault</span>
+<span class="kw">var</span> <span class="attr">secretClient</span> = <span class="kw">new</span> <span class="ty">SecretClient</span>(
+    <span class="kw">new</span> <span class="ty">Uri</span>(<span class="str">"https://myvault.vault.azure.net/"</span>), credential);
+
+<span class="cm">// Blob Storage</span>
+<span class="kw">var</span> <span class="attr">blobClient</span> = <span class="kw">new</span> <span class="ty">BlobServiceClient</span>(
+    <span class="kw">new</span> <span class="ty">Uri</span>(<span class="str">"https://mystorage.blob.core.windows.net/"</span>), credential);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># システム割り当てマネージドIDの有効化</span>
+az webapp identity assign --name myApp --resource-group myRG
+
+<span class="cm"># Key Vault へのアクセス許可（RBAC）</span>
+az role assignment create \
+  --role <span class="str">"Key Vault Secrets User"</span> \
+  --assignee &lt;principalId&gt; \
+  --scope /subscriptions/&lt;subId&gt;/resourceGroups/myRG/providers/Microsoft.KeyVault/vaults/myVault</pre>
+    </div>
+  </div>
+
+  <!-- ==================== App Configuration ==================== -->
+  <div class="section">
+    <h3>5. Azure App Configuration</h3>
+    <p>App Configuration は、アプリケーション設定と機能フラグを一元管理するサービスです。</p>
+
+    <h4>主な機能</h4>
+    <ul>
+      <li><strong>キー・値の管理</strong>: 名前空間、ラベルによる環境別設定</li>
+      <li><strong>機能フラグ</strong>: 機能の有効/無効をコード変更なしに切り替え</li>
+      <li><strong>Key Vault 参照</strong>: シークレット値は Key Vault への参照として保存</li>
+      <li><strong>スナップショット</strong>: 設定のポイントインタイム スナップショット</li>
+    </ul>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// App Configuration クライアント</span>
+<span class="kw">var</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">ConfigurationClient</span>(<span class="str">"connectionString"</span>);
+
+<span class="cm">// 設定値の取得</span>
+<span class="ty">ConfigurationSetting</span> <span class="attr">setting</span> = client.<span class="fn">GetConfigurationSetting</span>(<span class="str">"MyApp:Settings:Message"</span>);
+Console.<span class="fn">WriteLine</span>(setting.Value);
+
+<span class="cm">// 設定値の設定</span>
+client.<span class="fn">SetConfigurationSetting</span>(<span class="str">"MyApp:Settings:Message"</span>, <span class="str">"Hello!"</span>);
+
+<span class="cm">// ラベル付き設定（環境別）</span>
+client.<span class="fn">SetConfigurationSetting</span>(<span class="kw">new</span> <span class="ty">ConfigurationSetting</span>(
+    <span class="str">"MyApp:ConnectionString"</span>, <span class="str">"value"</span>, label: <span class="str">"Production"</span>));</pre>
+    </div>
+
+    <h4>機能フラグ（Feature Flags）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// ASP.NET Core での機能フラグ使用</span>
+<span class="cm">// Program.cs</span>
+builder.Configuration.<span class="fn">AddAzureAppConfiguration</span>(options =>
+{
+    options.<span class="fn">Connect</span>(<span class="str">"connectionString"</span>)
+           .<span class="fn">UseFeatureFlags</span>();
+});
+builder.Services.<span class="fn">AddFeatureManagement</span>();
+
+<span class="cm">// Controller での使用</span>
+[<span class="ty">FeatureGate</span>(<span class="str">"BetaFeature"</span>)]
+<span class="kw">public</span> <span class="ty">IActionResult</span> <span class="fn">BetaEndpoint</span>()
+{
+    <span class="kw">return</span> <span class="fn">Ok</span>(<span class="str">"Beta feature is enabled!"</span>);
+}</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Quiz ==================== -->
+  <div class="quiz-section" data-module="security">
+    <h3>&#128221; 確認テスト</h3>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q1</span>
+      <p class="q-text">ユーザーの操作なしに、バックエンドサービスがAPIにアクセスするための OAuth 2.0 フローはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q1" value="a"> Authorization Code</label></li>
+        <li><label><input type="radio" name="q1" value="b"> Device Code</label></li>
+        <li><label><input type="radio" name="q1" value="c"> Client Credentials</label></li>
+        <li><label><input type="radio" name="q1" value="d"> Implicit</label></li>
+      </ul>
+      <div class="q-explanation">Client Credentials フローはユーザーの介入なしにアプリケーション自体として認証します。デーモンやバックエンドサービスに最適です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q2</span>
+      <p class="q-text">MSAL でサーバーサイド Web アプリケーションを構築する場合、使用するクラスはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q2" value="a"> PublicClientApplication</label></li>
+        <li><label><input type="radio" name="q2" value="b"> ConfidentialClientApplication</label></li>
+        <li><label><input type="radio" name="q2" value="c"> ManagedIdentityApplication</label></li>
+        <li><label><input type="radio" name="q2" value="d"> GraphServiceClient</label></li>
+      </ul>
+      <div class="q-explanation">ConfidentialClientApplication は、クライアントシークレットや証明書を安全に保持できるサーバーサイドアプリで使用します。PublicClientApplication はデスクトップやモバイル向けです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q3</span>
+      <p class="q-text">Key Vault のアクセス制御方式として、Microsoft が推奨しているのはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q3" value="a"> Azure RBAC</label></li>
+        <li><label><input type="radio" name="q3" value="b"> アクセスポリシー</label></li>
+        <li><label><input type="radio" name="q3" value="c"> SAS トークン</label></li>
+        <li><label><input type="radio" name="q3" value="d"> マネージドID のみ</label></li>
+      </ul>
+      <div class="q-explanation">Azure RBAC が推奨です。管理プレーンとデータプレーンの両方をきめ細かく制御でき、条件付きアクセスなどの高度な機能も利用可能です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q4</span>
+      <p class="q-text">マネージドIDで、複数のリソース間で共有できるのはどちらですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q4" value="a"> システム割り当てのみ</label></li>
+        <li><label><input type="radio" name="q4" value="b"> どちらも共有可能</label></li>
+        <li><label><input type="radio" name="q4" value="c"> どちらも共有不可</label></li>
+        <li><label><input type="radio" name="q4" value="d"> ユーザー割り当てのみ</label></li>
+      </ul>
+      <div class="q-explanation">ユーザー割り当てマネージドIDは、独立したリソースとして作成され、複数のAzureリソースで共有できます。システム割り当ては1つのリソースに紐づきます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q5</span>
+      <p class="q-text">DefaultAzureCredential がローカル開発環境で最初に成功する可能性が高い認証方法は？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q5" value="a"> マネージドID</label></li>
+        <li><label><input type="radio" name="q5" value="b"> Azure CLI</label></li>
+        <li><label><input type="radio" name="q5" value="c"> 環境変数</label></li>
+        <li><label><input type="radio" name="q5" value="d"> Interactive Browser</label></li>
+      </ul>
+      <div class="q-explanation">ローカル開発環境では通常、Azure CLI（az login）で認証済みのため、Azure CLI 認証が成功します。マネージドIDはAzure環境でのみ動作します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q6</span>
+      <p class="q-text">Azure App Configuration でシークレット値を安全に保存する方法はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q6" value="a"> 値を暗号化して直接保存</label></li>
+        <li><label><input type="radio" name="q6" value="b"> 環境変数として設定</label></li>
+        <li><label><input type="radio" name="q6" value="c"> Key Vault 参照として保存</label></li>
+        <li><label><input type="radio" name="q6" value="d"> ラベル付きで保存</label></li>
+      </ul>
+      <div class="q-explanation">App Configuration では、シークレット値を直接保存せず、Key Vault への参照として保存するのがベストプラクティスです。これにより、シークレットの一元管理とローテーションが可能になります。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q7</span>
+      <p class="q-text">Microsoft Graph API の安定版エンドポイントのベースURLはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q7" value="a"> https://graph.microsoft.com/v1.0</label></li>
+        <li><label><input type="radio" name="q7" value="b"> https://graph.microsoft.com/beta</label></li>
+        <li><label><input type="radio" name="q7" value="c"> https://api.microsoft.com/graph</label></li>
+        <li><label><input type="radio" name="q7" value="d"> https://management.azure.com/graph</label></li>
+      </ul>
+      <div class="q-explanation">Microsoft Graph の安定版（v1.0）エンドポイントは <code>https://graph.microsoft.com/v1.0</code> です。<code>/beta</code> はプレビュー版で、変更される可能性があります。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q8</span>
+      <p class="q-text">SPA（シングルページアプリケーション）で推奨される OAuth 2.0 フローはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q8" value="a"> Implicit</label></li>
+        <li><label><input type="radio" name="q8" value="b"> Client Credentials</label></li>
+        <li><label><input type="radio" name="q8" value="c"> Resource Owner Password</label></li>
+        <li><label><input type="radio" name="q8" value="d"> Authorization Code + PKCE</label></li>
+      </ul>
+      <div class="q-explanation">SPA では Authorization Code + PKCE（Proof Key for Code Exchange）が推奨されます。Implicit フローは非推奨です。PKCE はクライアントシークレットなしでセキュアな認証を実現します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q9</span>
+      <p class="q-text">Key Vault でシークレットを削除したとき、デフォルトの動作はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q9" value="a"> 即座に完全削除される</label></li>
+        <li><label><input type="radio" name="q9" value="b"> ソフトデリート（論理削除）される</label></li>
+        <li><label><input type="radio" name="q9" value="c"> Archive に移動される</label></li>
+        <li><label><input type="radio" name="q9" value="d"> バックアップが作成されてから削除される</label></li>
+      </ul>
+      <div class="q-explanation">Key Vault ではソフトデリートがデフォルトで有効です。削除されたシークレットは保持期間（7-90日）中に復元可能です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q10</span>
+      <p class="q-text">App Configuration で環境ごとに異なる設定値を管理する機能はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q10" value="a"> スナップショット</label></li>
+        <li><label><input type="radio" name="q10" value="b"> 機能フラグ</label></li>
+        <li><label><input type="radio" name="q10" value="c"> ラベル</label></li>
+        <li><label><input type="radio" name="q10" value="d"> 名前空間</label></li>
+      </ul>
+      <div class="q-explanation">ラベルを使って同じキーに対して環境ごとの値を設定できます（例: label="Development", label="Production"）。</div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn btn-primary quiz-check">採点する</button>
+      <button class="btn btn-secondary quiz-reset">リセット</button>
+    </div>
+    <div class="quiz-result"></div>
+  </div>
+
+  <div class="page-nav">
+    <a href="storage.html" class="btn btn-secondary">&larr; ストレージ</a>
+    <a href="monitor.html" class="btn btn-primary">監視・最適化 &rarr;</a>
+  </div>
+
+  <footer class="site-footer">AZ-204 学習ガイド &copy; 2026</footer>
+</main>
+
+<button class="scroll-top" aria-label="ページ上部へ">&#8679;</button>
+<script src="js/app.js"></script>
+</body>
+</html>

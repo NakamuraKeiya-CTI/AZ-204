@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>サービス連携 | AZ-204 学習ガイド</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <button class="hamburger" aria-label="メニュー">&#9776;</button>
+  <h1>AZ-204 <span>Azure Developer Associate</span></h1>
+  <div class="header-actions">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切替">&#127769;</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">ホーム</div>
+    <a href="index.html"><span class="nav-icon">&#127968;</span> ダッシュボード</a>
+    <div class="sidebar-section-title">試験範囲</div>
+    <a href="compute.html"><span class="nav-icon">&#9881;</span> コンピューティング <span class="nav-badge">25-30%</span></a>
+    <a href="storage.html"><span class="nav-icon">&#128451;</span> ストレージ <span class="nav-badge">15-20%</span></a>
+    <a href="security.html"><span class="nav-icon">&#128274;</span> セキュリティ <span class="nav-badge">20-25%</span></a>
+    <a href="monitor.html"><span class="nav-icon">&#128200;</span> 監視・最適化 <span class="nav-badge">15-20%</span></a>
+    <a href="integration.html"><span class="nav-icon">&#128279;</span> サービス連携 <span class="nav-badge">15-20%</span></a>
+  </div>
+</nav>
+<div class="sidebar-overlay"></div>
+<div class="reading-progress" style="width:0"></div>
+
+<main class="main-content">
+  <div class="breadcrumb"><a href="index.html">ホーム</a> &gt; サービス連携</div>
+  <div class="module-header">
+    <h2>&#128279; Azure サービスおよびサードパーティサービスとの連携</h2>
+    <div class="subtitle">出題比率: 15-20%</div>
+  </div>
+
+  <!-- ==================== API Management ==================== -->
+  <div class="section">
+    <h3>1. Azure API Management (APIM)</h3>
+    <p>APIM は、API のセキュリティ、スロットリング、変換、公開を一元管理するゲートウェイです。</p>
+
+    <h4>コンポーネント</h4>
+    <ul>
+      <li><strong>API Gateway</strong>: API呼び出しを受け付け、バックエンドに転送</li>
+      <li><strong>管理プレーン</strong>: APIの定義、ポリシーの設定</li>
+      <li><strong>Developer Portal</strong>: API利用者向けのドキュメントサイト</li>
+    </ul>
+
+    <h4>SKU 比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>SKU</th><th>SLA</th><th>VNet</th><th>特徴</th></tr>
+        <tr><td>Consumption</td><td>99.95%</td><td>不可</td><td>サーバーレス、従量課金</td></tr>
+        <tr><td>Developer</td><td>なし</td><td>可</td><td>開発・テスト用</td></tr>
+        <tr><td>Basic</td><td>99.95%</td><td>不可</td><td>小規模本番</td></tr>
+        <tr><td>Standard</td><td>99.95%</td><td>不可</td><td>中規模本番</td></tr>
+        <tr><td>Premium</td><td>99.99%</td><td>可</td><td>マルチリージョン、高可用性</td></tr>
+      </table>
+    </div>
+
+    <h4>ポリシー</h4>
+    <p>ポリシーは XML で定義し、API の動作を制御します。4つのセクションがあります。</p>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">XML</span><button class="copy-btn">Copy</button></div>
+<pre><span class="kw">&lt;policies&gt;</span>
+  <span class="cm">&lt;!-- 受信時（クライアント → Gateway）--&gt;</span>
+  <span class="kw">&lt;inbound&gt;</span>
+    <span class="cm">&lt;!-- レート制限: 60秒間に10回まで --&gt;</span>
+    &lt;<span class="fn">rate-limit</span> <span class="attr">calls</span>=<span class="str">"10"</span> <span class="attr">renewal-period</span>=<span class="str">"60"</span> /&gt;
+
+    <span class="cm">&lt;!-- JWTトークンの検証 --&gt;</span>
+    &lt;<span class="fn">validate-jwt</span> <span class="attr">header-name</span>=<span class="str">"Authorization"</span>&gt;
+      &lt;openid-config <span class="attr">url</span>=<span class="str">"https://login.microsoftonline.com/{tenant}/.well-known/openid-configuration"</span> /&gt;
+    &lt;/<span class="fn">validate-jwt</span>&gt;
+
+    <span class="cm">&lt;!-- CORS --&gt;</span>
+    &lt;<span class="fn">cors</span>&gt;
+      &lt;allowed-origins&gt;&lt;origin&gt;<span class="str">https://myapp.com</span>&lt;/origin&gt;&lt;/allowed-origins&gt;
+      &lt;allowed-methods&gt;&lt;method&gt;<span class="str">GET</span>&lt;/method&gt;&lt;method&gt;<span class="str">POST</span>&lt;/method&gt;&lt;/allowed-methods&gt;
+    &lt;/<span class="fn">cors</span>&gt;
+
+    <span class="cm">&lt;!-- ヘッダーの設定 --&gt;</span>
+    &lt;<span class="fn">set-header</span> <span class="attr">name</span>=<span class="str">"X-Custom"</span> <span class="attr">exists-action</span>=<span class="str">"override"</span>&gt;
+      &lt;value&gt;<span class="str">my-value</span>&lt;/value&gt;
+    &lt;/<span class="fn">set-header</span>&gt;
+  <span class="kw">&lt;/inbound&gt;</span>
+
+  <span class="cm">&lt;!-- バックエンド呼び出し時 --&gt;</span>
+  <span class="kw">&lt;backend&gt;</span>
+    &lt;<span class="fn">forward-request</span> /&gt;
+  <span class="kw">&lt;/backend&gt;</span>
+
+  <span class="cm">&lt;!-- 送信時（Gateway → クライアント）--&gt;</span>
+  <span class="kw">&lt;outbound&gt;</span>
+    <span class="cm">&lt;!-- レスポンスキャッシュの保存 --&gt;</span>
+    &lt;<span class="fn">cache-store</span> <span class="attr">duration</span>=<span class="str">"300"</span> /&gt;
+  <span class="kw">&lt;/outbound&gt;</span>
+
+  <span class="cm">&lt;!-- エラー時 --&gt;</span>
+  <span class="kw">&lt;on-error&gt;</span>
+    &lt;<span class="fn">set-body</span>&gt;<span class="str">{"error": "An error occurred"}</span>&lt;/<span class="fn">set-body</span>&gt;
+  <span class="kw">&lt;/on-error&gt;</span>
+<span class="kw">&lt;/policies&gt;</span></pre>
+    </div>
+
+    <div class="info-box important">
+      <strong>頻出ポリシー</strong>
+      <code>rate-limit</code>（レート制限）、<code>quota</code>（クォータ）、<code>validate-jwt</code>（JWT検証）、<code>cache-lookup</code>/<code>cache-store</code>（キャッシュ）、<code>set-header</code>（ヘッダー設定）、<code>rewrite-uri</code>（URI書換え）は試験頻出です。
+    </div>
+  </div>
+
+  <!-- ==================== Event Grid ==================== -->
+  <div class="section">
+    <h3>2. Azure Event Grid</h3>
+    <p>Event Grid は、イベント駆動アーキテクチャのためのフルマネージドイベントルーティングサービスです。</p>
+
+    <h4>主要概念</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>概念</th><th>説明</th></tr>
+        <tr><td>イベントソース</td><td>イベントを発生させるサービス（Blob Storage、Resource Group 等）</td></tr>
+        <tr><td>トピック</td><td>イベントの公開先エンドポイント（システム/カスタム）</td></tr>
+        <tr><td>サブスクリプション</td><td>イベントのルーティングルール（フィルタリング含む）</td></tr>
+        <tr><td>イベントハンドラー</td><td>イベントを処理するサービス（Functions、Webhook 等）</td></tr>
+      </table>
+    </div>
+
+    <h4>イベントスキーマ</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">JSON</span><button class="copy-btn">Copy</button></div>
+<pre>[{
+  <span class="attr">"id"</span>: <span class="str">"unique-id"</span>,
+  <span class="attr">"eventType"</span>: <span class="str">"Microsoft.Storage.BlobCreated"</span>,
+  <span class="attr">"subject"</span>: <span class="str">"/blobServices/default/containers/mycontainer/blobs/myfile.txt"</span>,
+  <span class="attr">"eventTime"</span>: <span class="str">"2026-01-15T10:30:00Z"</span>,
+  <span class="attr">"data"</span>: {
+    <span class="attr">"api"</span>: <span class="str">"PutBlob"</span>,
+    <span class="attr">"contentLength"</span>: <span class="num">1024</span>,
+    <span class="attr">"url"</span>: <span class="str">"https://mystorage.blob.core.windows.net/mycontainer/myfile.txt"</span>
+  },
+  <span class="attr">"dataVersion"</span>: <span class="str">"1.0"</span>
+}]</pre>
+    </div>
+
+    <h4>フィルタリング</h4>
+    <ul>
+      <li><strong>イベントタイプフィルター</strong>: 特定のイベントタイプのみ受信</li>
+      <li><strong>サブジェクトフィルター</strong>: サブジェクトのプレフィックス/サフィックスでフィルタ</li>
+      <li><strong>高度なフィルター</strong>: データフィールドの値に基づくフィルタ</li>
+    </ul>
+
+    <div class="info-box note">
+      <strong>配信と再試行</strong>
+      Event Grid は最大24時間、指数バックオフで再試行します。デッドレターの送信先としてBlobコンテナを設定できます。
+    </div>
+  </div>
+
+  <!-- ==================== Event Hubs ==================== -->
+  <div class="section">
+    <h3>3. Azure Event Hubs</h3>
+    <p>Event Hubs は、毎秒数百万のイベントを処理できるビッグデータストリーミングプラットフォームです。</p>
+
+    <h4>主要概念</h4>
+    <ul>
+      <li><strong>パーティション</strong>: データの並列処理単位。作成時に指定（後から変更不可）</li>
+      <li><strong>コンシューマーグループ</strong>: イベントストリームの独立したビュー（デフォルト: $Default）</li>
+      <li><strong>オフセット</strong>: パーティション内のイベント位置</li>
+      <li><strong>キャプチャ</strong>: イベントを Blob Storage / Data Lake に自動保存</li>
+    </ul>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>SKU</th><th>スループット</th><th>パーティション</th><th>保持期間</th></tr>
+        <tr><td>Basic</td><td>1 TU</td><td>最大32</td><td>1日</td></tr>
+        <tr><td>Standard</td><td>20 TU</td><td>最大32</td><td>最大7日</td></tr>
+        <tr><td>Premium</td><td>PU ベース</td><td>最大100</td><td>最大90日</td></tr>
+        <tr><td>Dedicated</td><td>CU ベース</td><td>最大1024</td><td>最大90日</td></tr>
+      </table>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// イベントの送信</span>
+<span class="kw">var</span> <span class="attr">producer</span> = <span class="kw">new</span> <span class="ty">EventHubProducerClient</span>(<span class="str">"connectionString"</span>, <span class="str">"hubName"</span>);
+<span class="kw">using</span> <span class="ty">EventDataBatch</span> <span class="attr">batch</span> = <span class="kw">await</span> producer.<span class="fn">CreateBatchAsync</span>();
+batch.<span class="fn">TryAdd</span>(<span class="kw">new</span> <span class="ty">EventData</span>(<span class="ty">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(<span class="str">"Event 1"</span>)));
+batch.<span class="fn">TryAdd</span>(<span class="kw">new</span> <span class="ty">EventData</span>(<span class="ty">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(<span class="str">"Event 2"</span>)));
+<span class="kw">await</span> producer.<span class="fn">SendAsync</span>(batch);
+
+<span class="cm">// イベントの受信（EventProcessorClient）</span>
+<span class="kw">var</span> <span class="attr">processor</span> = <span class="kw">new</span> <span class="ty">EventProcessorClient</span>(
+    blobContainerClient, <span class="str">"$Default"</span>,
+    <span class="str">"connectionString"</span>, <span class="str">"hubName"</span>);
+
+processor.ProcessEventAsync += <span class="kw">async</span> (args) =>
+{
+    <span class="kw">string</span> <span class="attr">body</span> = args.Data.EventBody.<span class="fn">ToString</span>();
+    <span class="cm">// チェックポイントの更新</span>
+    <span class="kw">await</span> args.<span class="fn">UpdateCheckpointAsync</span>();
+};
+<span class="kw">await</span> processor.<span class="fn">StartProcessingAsync</span>();</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Service Bus ==================== -->
+  <div class="section">
+    <h3>4. Azure Service Bus</h3>
+    <p>Service Bus は、エンタープライズ向けのメッセージブローカーです。キューとトピック/サブスクリプションの2つのモデルを提供します。</p>
+
+    <h4>キュー vs トピック/サブスクリプション</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>モデル</th><th>パターン</th><th>説明</th></tr>
+        <tr><td>キュー</td><td>Point-to-Point</td><td>1つのメッセージは1つの受信者のみ処理</td></tr>
+        <tr><td>トピック/サブスクリプション</td><td>Publish-Subscribe</td><td>1つのメッセージを複数の受信者が処理可能</td></tr>
+      </table>
+    </div>
+
+    <h4>メッセージ機能</h4>
+    <ul>
+      <li><strong>TTL（Time To Live）</strong>: メッセージの有効期限</li>
+      <li><strong>Dead-Letter Queue (DLQ)</strong>: 処理できないメッセージの退避先</li>
+      <li><strong>セッション</strong>: FIFO（先入れ先出し）順序保証</li>
+      <li><strong>重複検出</strong>: MessageId に基づく重複排除</li>
+      <li><strong>スケジュールされた配信</strong>: 指定時刻にメッセージを配信</li>
+    </ul>
+
+    <div class="info-box important">
+      <strong>試験ポイント</strong>
+      FIFO 順序を保証するにはセッションを有効にします。Dead-Letter Queue はメッセージの配信試行回数が上限に達した場合や、TTL超過時に使われます。
+    </div>
+
+    <h4>.NET SDK での操作</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// メッセージの送信</span>
+<span class="kw">var</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">ServiceBusClient</span>(<span class="str">"connectionString"</span>);
+<span class="ty">ServiceBusSender</span> <span class="attr">sender</span> = client.<span class="fn">CreateSender</span>(<span class="str">"myqueue"</span>);
+
+<span class="kw">var</span> <span class="attr">message</span> = <span class="kw">new</span> <span class="ty">ServiceBusMessage</span>(<span class="str">"Hello Service Bus!"</span>);
+message.MessageId = <span class="str">"unique-id-123"</span>;
+message.TimeToLive = <span class="ty">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">30</span>);
+<span class="kw">await</span> sender.<span class="fn">SendMessageAsync</span>(message);
+
+<span class="cm">// メッセージの受信</span>
+<span class="ty">ServiceBusReceiver</span> <span class="attr">receiver</span> = client.<span class="fn">CreateReceiver</span>(<span class="str">"myqueue"</span>);
+<span class="ty">ServiceBusReceivedMessage</span> <span class="attr">received</span> = <span class="kw">await</span> receiver.<span class="fn">ReceiveMessageAsync</span>();
+
+<span class="cm">// メッセージの処理完了</span>
+<span class="kw">await</span> receiver.<span class="fn">CompleteMessageAsync</span>(received);
+
+<span class="cm">// メッセージの破棄（DLQに送信）</span>
+<span class="kw">await</span> receiver.<span class="fn">DeadLetterMessageAsync</span>(received, <span class="str">"ProcessingFailed"</span>);
+
+<span class="cm">// ピーク（メッセージを削除せずに確認）</span>
+<span class="ty">ServiceBusReceivedMessage</span> <span class="attr">peeked</span> = <span class="kw">await</span> receiver.<span class="fn">PeekMessageAsync</span>();</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Queue Storage ==================== -->
+  <div class="section">
+    <h3>5. Azure Queue Storage</h3>
+    <p>Queue Storage は、大量のメッセージを格納するシンプルなキューサービスです。</p>
+
+    <h4>Service Bus Queue との比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>機能</th><th>Queue Storage</th><th>Service Bus Queue</th></tr>
+        <tr><td>メッセージサイズ</td><td>64 KB</td><td>256 KB（Standard）/ 100 MB（Premium）</td></tr>
+        <tr><td>キュー最大サイズ</td><td>500 TB</td><td>1-80 GB</td></tr>
+        <tr><td>FIFO保証</td><td>なし</td><td>セッションで可能</td></tr>
+        <tr><td>重複検出</td><td>なし</td><td>あり</td></tr>
+        <tr><td>DLQ</td><td>なし</td><td>あり</td></tr>
+        <tr><td>トランザクション</td><td>なし</td><td>あり</td></tr>
+        <tr><td>コスト</td><td>低</td><td>高</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box tip">
+      <strong>使い分けの目安</strong>
+      シンプルなキューイングで大量メッセージ → Queue Storage。
+      FIFO、トランザクション、DLQ が必要 → Service Bus。
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// Queue Storage の操作</span>
+<span class="kw">var</span> <span class="attr">queueClient</span> = <span class="kw">new</span> <span class="ty">QueueClient</span>(<span class="str">"connectionString"</span>, <span class="str">"myqueue"</span>);
+<span class="kw">await</span> queueClient.<span class="fn">CreateIfNotExistsAsync</span>();
+
+<span class="cm">// メッセージの送信</span>
+<span class="kw">await</span> queueClient.<span class="fn">SendMessageAsync</span>(<span class="str">"Hello Queue!"</span>);
+
+<span class="cm">// メッセージの受信（非表示時間: 30秒）</span>
+<span class="ty">QueueMessage</span> <span class="attr">message</span> = <span class="kw">await</span> queueClient.<span class="fn">ReceiveMessageAsync</span>(
+    <span class="ty">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">30</span>));
+
+<span class="cm">// メッセージの削除</span>
+<span class="kw">await</span> queueClient.<span class="fn">DeleteMessageAsync</span>(
+    message.MessageId, message.PopReceipt);</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Quiz ==================== -->
+  <div class="quiz-section" data-module="integration">
+    <h3>&#128221; 確認テスト</h3>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q1</span>
+      <p class="q-text">APIM ポリシーで、クライアントからのリクエストに対してレート制限を適用するセクションはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q1" value="a"> backend</label></li>
+        <li><label><input type="radio" name="q1" value="b"> inbound</label></li>
+        <li><label><input type="radio" name="q1" value="c"> outbound</label></li>
+        <li><label><input type="radio" name="q1" value="d"> on-error</label></li>
+      </ul>
+      <div class="q-explanation">inbound セクションは、クライアントから Gateway に到達したリクエストに対して適用されます。rate-limit、validate-jwt、cors などのポリシーはここに配置します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q2</span>
+      <p class="q-text">Event Grid と Event Hubs の違いとして正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q2" value="a"> Event Grid はストリーミング用、Event Hubs はイベント通知用</label></li>
+        <li><label><input type="radio" name="q2" value="b"> どちらも同じ用途</label></li>
+        <li><label><input type="radio" name="q2" value="c"> Event Grid はイベント通知・ルーティング用、Event Hubs は大量ストリーミング用</label></li>
+        <li><label><input type="radio" name="q2" value="d"> Event Hubs はサーバーレス、Event Grid はマネージド</label></li>
+      </ul>
+      <div class="q-explanation">Event Grid はリアクティブなイベント通知とルーティング（Pub/Sub）に使います。Event Hubs は毎秒数百万イベントのビッグデータストリーミングに使います。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q3</span>
+      <p class="q-text">Service Bus で FIFO 順序を保証するために必要な機能はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q3" value="a"> セッション</label></li>
+        <li><label><input type="radio" name="q3" value="b"> 重複検出</label></li>
+        <li><label><input type="radio" name="q3" value="c"> Dead-Letter Queue</label></li>
+        <li><label><input type="radio" name="q3" value="d"> パーティション</label></li>
+      </ul>
+      <div class="q-explanation">Service Bus のセッション機能を有効にすると、同一セッションID のメッセージが FIFO 順序で処理されます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q4</span>
+      <p class="q-text">APIM で JWT トークンの検証に使用するポリシーはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q4" value="a"> set-header</label></li>
+        <li><label><input type="radio" name="q4" value="b"> rate-limit</label></li>
+        <li><label><input type="radio" name="q4" value="c"> cache-lookup</label></li>
+        <li><label><input type="radio" name="q4" value="d"> validate-jwt</label></li>
+      </ul>
+      <div class="q-explanation"><code>validate-jwt</code> ポリシーは、Authorization ヘッダーの JWT トークンを検証します。OpenID Connect 構成を指定して、トークンの署名、発行者、オーディエンスを検証できます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q5</span>
+      <p class="q-text">Event Hubs でイベントの処理位置を記録する仕組みはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q5" value="a"> リースコンテナ</label></li>
+        <li><label><input type="radio" name="q5" value="b"> チェックポイント</label></li>
+        <li><label><input type="radio" name="q5" value="c"> オフセットテーブル</label></li>
+        <li><label><input type="radio" name="q5" value="d"> コンシューマーグループ</label></li>
+      </ul>
+      <div class="q-explanation">チェックポイントは、パーティション内の最後に正常処理したイベントの位置を記録します。EventProcessorClient では <code>UpdateCheckpointAsync()</code> で更新します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q6</span>
+      <p class="q-text">Queue Storage と Service Bus Queue の比較で正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q6" value="a"> Queue Storage はメッセージサイズ 64KB、Service Bus は 256KB 以上</label></li>
+        <li><label><input type="radio" name="q6" value="b"> Service Bus の方がキュー最大サイズが大きい</label></li>
+        <li><label><input type="radio" name="q6" value="c"> Queue Storage は FIFO を保証する</label></li>
+        <li><label><input type="radio" name="q6" value="d"> Queue Storage にも Dead-Letter Queue がある</label></li>
+      </ul>
+      <div class="q-explanation">Queue Storage のメッセージサイズ上限は 64KB、Service Bus は Standard で 256KB、Premium で 100MB です。キュー全体の容量は Queue Storage（500TB）が Service Bus より大きいです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q7</span>
+      <p class="q-text">Event Grid のイベント配信が失敗した場合のデフォルトの再試行期間はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q7" value="a"> 1時間</label></li>
+        <li><label><input type="radio" name="q7" value="b"> 12時間</label></li>
+        <li><label><input type="radio" name="q7" value="c"> 24時間</label></li>
+        <li><label><input type="radio" name="q7" value="d"> 48時間</label></li>
+      </ul>
+      <div class="q-explanation">Event Grid は最大24時間、指数バックオフで配信を再試行します。再試行期間を過ぎたイベントはデッドレターに送信されます（設定されている場合）。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q8</span>
+      <p class="q-text">Service Bus で処理できなかったメッセージが自動的に移動される先はどこですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q8" value="a"> Archive キュー</label></li>
+        <li><label><input type="radio" name="q8" value="b"> Retry キュー</label></li>
+        <li><label><input type="radio" name="q8" value="c"> Poison メッセージキュー</label></li>
+        <li><label><input type="radio" name="q8" value="d"> Dead-Letter Queue</label></li>
+      </ul>
+      <div class="q-explanation">Dead-Letter Queue (DLQ) は、配信試行回数が上限に達した場合やTTL超過のメッセージが自動的に移動される特別なサブキューです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q9</span>
+      <p class="q-text">Event Hubs のキャプチャ機能で、イベントが保存される先はどこですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q9" value="a"> Cosmos DB</label></li>
+        <li><label><input type="radio" name="q9" value="b"> Blob Storage / Data Lake Storage</label></li>
+        <li><label><input type="radio" name="q9" value="c"> SQL Database</label></li>
+        <li><label><input type="radio" name="q9" value="d"> Table Storage</label></li>
+      </ul>
+      <div class="q-explanation">Event Hubs のキャプチャ機能は、イベントデータを Avro 形式で Azure Blob Storage または Azure Data Lake Storage に自動保存します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q10</span>
+      <p class="q-text">APIM のポリシーで、レスポンスをキャッシュして返す場合、inbound と outbound に配置するポリシーの正しい組み合わせはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q10" value="a"> inbound: cache-lookup / outbound: cache-store</label></li>
+        <li><label><input type="radio" name="q10" value="b"> inbound: cache-store / outbound: cache-lookup</label></li>
+        <li><label><input type="radio" name="q10" value="c"> inbound のみ: cache-lookup + cache-store</label></li>
+        <li><label><input type="radio" name="q10" value="d"> outbound のみ: cache-lookup + cache-store</label></li>
+      </ul>
+      <div class="q-explanation">inbound で <code>cache-lookup</code>（キャッシュの確認）を行い、キャッシュヒット時はバックエンドを呼ばずに返却。ミスの場合はバックエンドを呼び、outbound で <code>cache-store</code>（レスポンスをキャッシュに保存）します。</div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn btn-primary quiz-check">採点する</button>
+      <button class="btn btn-secondary quiz-reset">リセット</button>
+    </div>
+    <div class="quiz-result"></div>
+  </div>
+
+  <div class="page-nav">
+    <a href="monitor.html" class="btn btn-secondary">&larr; 監視・最適化</a>
+    <a href="index.html" class="btn btn-primary">ホーム &rarr;</a>
+  </div>
+
+  <footer class="site-footer">AZ-204 学習ガイド &copy; 2026</footer>
+</main>
+
+<button class="scroll-top" aria-label="ページ上部へ">&#8679;</button>
+<script src="js/app.js"></script>
+</body>
+</html>

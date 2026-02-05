@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>監視・最適化 | AZ-204 学習ガイド</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <button class="hamburger" aria-label="メニュー">&#9776;</button>
+  <h1>AZ-204 <span>Azure Developer Associate</span></h1>
+  <div class="header-actions">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切替">&#127769;</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">ホーム</div>
+    <a href="index.html"><span class="nav-icon">&#127968;</span> ダッシュボード</a>
+    <div class="sidebar-section-title">試験範囲</div>
+    <a href="compute.html"><span class="nav-icon">&#9881;</span> コンピューティング <span class="nav-badge">25-30%</span></a>
+    <a href="storage.html"><span class="nav-icon">&#128451;</span> ストレージ <span class="nav-badge">15-20%</span></a>
+    <a href="security.html"><span class="nav-icon">&#128274;</span> セキュリティ <span class="nav-badge">20-25%</span></a>
+    <a href="monitor.html"><span class="nav-icon">&#128200;</span> 監視・最適化 <span class="nav-badge">15-20%</span></a>
+    <a href="integration.html"><span class="nav-icon">&#128279;</span> サービス連携 <span class="nav-badge">15-20%</span></a>
+  </div>
+</nav>
+<div class="sidebar-overlay"></div>
+<div class="reading-progress" style="width:0"></div>
+
+<main class="main-content">
+  <div class="breadcrumb"><a href="index.html">ホーム</a> &gt; 監視・最適化</div>
+  <div class="module-header">
+    <h2>&#128200; Azure ソリューションの監視・トラブルシューティング・最適化</h2>
+    <div class="subtitle">出題比率: 15-20%</div>
+  </div>
+
+  <!-- ==================== Azure Cache for Redis ==================== -->
+  <div class="section">
+    <h3>1. Azure Cache for Redis</h3>
+    <p>Azure Cache for Redis は、インメモリデータストアを提供し、アプリケーションのパフォーマンスを向上させます。</p>
+
+    <h4>SKU 比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>SKU</th><th>メモリ</th><th>SLA</th><th>レプリケーション</th><th>特徴</th></tr>
+        <tr><td>Basic</td><td>250MB - 53GB</td><td>なし</td><td>なし</td><td>開発/テスト用</td></tr>
+        <tr><td>Standard</td><td>250MB - 53GB</td><td>99.9%</td><td>プライマリ/レプリカ</td><td>本番ワークロード</td></tr>
+        <tr><td>Premium</td><td>6GB - 120GB</td><td>99.9%</td><td>プライマリ/レプリカ</td><td>クラスタリング、VNet、永続化</td></tr>
+        <tr><td>Enterprise</td><td>12GB - 2TB</td><td>99.99%</td><td>Active Geo</td><td>Redis Modules、高可用性</td></tr>
+      </table>
+    </div>
+
+    <h4>キャッシュパターン</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>パターン</th><th>説明</th></tr>
+        <tr><td>Cache-Aside</td><td>キャッシュミス時にDBから読み取り、キャッシュに書き込む（最も一般的）</td></tr>
+        <tr><td>Write-Through</td><td>書き込み時にキャッシュとDBの両方に書き込む</td></tr>
+        <tr><td>Write-Behind</td><td>キャッシュに書き込み後、非同期でDBに反映</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box important">
+      <strong>試験ポイント: Cache-Aside パターン</strong>
+      1) キャッシュを確認 → 2) ミスならDBから取得 → 3) キャッシュに書き込み → 4) 結果を返す。AZ-204で最も問われるパターンです。
+    </div>
+
+    <h4>C# での操作（StackExchange.Redis）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// 接続</span>
+<span class="kw">var</span> <span class="attr">connection</span> = <span class="ty">ConnectionMultiplexer</span>.<span class="fn">Connect</span>(<span class="str">"myredis.redis.cache.windows.net:6380,password=xxx,ssl=True"</span>);
+<span class="ty">IDatabase</span> <span class="attr">cache</span> = connection.<span class="fn">GetDatabase</span>();
+
+<span class="cm">// Cache-Aside パターン</span>
+<span class="kw">string</span> <span class="attr">key</span> = <span class="str">"user:123"</span>;
+<span class="kw">string</span> <span class="attr">cached</span> = <span class="kw">await</span> cache.<span class="fn">StringGetAsync</span>(key);
+
+<span class="kw">if</span> (cached == <span class="kw">null</span>)
+{
+    <span class="cm">// キャッシュミス: DBから取得</span>
+    <span class="kw">var</span> <span class="attr">user</span> = <span class="kw">await</span> <span class="fn">GetUserFromDb</span>(<span class="num">123</span>);
+    <span class="cm">// キャッシュに設定（TTL: 1時間）</span>
+    <span class="kw">await</span> cache.<span class="fn">StringSetAsync</span>(key, <span class="fn">JsonSerialize</span>(user),
+        <span class="ty">TimeSpan</span>.<span class="fn">FromHours</span>(<span class="num">1</span>));
+    <span class="kw">return</span> user;
+}
+<span class="kw">return</span> <span class="fn">JsonDeserialize</span>(cached);</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Azure CDN ==================== -->
+  <div class="section">
+    <h3>2. Azure CDN（Content Delivery Network）</h3>
+    <p>CDN は、世界中のエッジサーバー（POP: Point of Presence）にコンテンツをキャッシュし、ユーザーに最も近い場所から配信します。</p>
+
+    <h4>CDN の構成要素</h4>
+    <ul>
+      <li><strong>プロファイル</strong>: CDN の設定コンテナ</li>
+      <li><strong>エンドポイント</strong>: コンテンツ配信のURL（<code>*.azureedge.net</code>）</li>
+      <li><strong>オリジン</strong>: 元のコンテンツの配信元（Blob Storage、Web App等）</li>
+      <li><strong>POP</strong>: エッジサーバーの所在地</li>
+    </ul>
+
+    <h4>キャッシュ動作</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>ルール</th><th>説明</th></tr>
+        <tr><td>グローバルキャッシュルール</td><td>エンドポイント全体に適用</td></tr>
+        <tr><td>カスタムキャッシュルール</td><td>パスやファイル拡張子に基づく条件付きルール</td></tr>
+        <tr><td>クエリ文字列キャッシュ</td><td>クエリパラメータの扱い（無視 / キャッシュキーに含む / バイパス）</td></tr>
+      </table>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># CDN プロファイルの作成</span>
+az cdn profile create --name myCdnProfile \
+  --resource-group myRG --sku Standard_Microsoft
+
+<span class="cm"># CDN エンドポイントの作成</span>
+az cdn endpoint create --name myCdnEndpoint \
+  --profile-name myCdnProfile --resource-group myRG \
+  --origin mystorage.blob.core.windows.net
+
+<span class="cm"># キャッシュのパージ（即座にキャッシュを無効化）</span>
+az cdn endpoint purge --name myCdnEndpoint \
+  --profile-name myCdnProfile --resource-group myRG \
+  --content-paths <span class="str">"/images/*"</span> <span class="str">"/css/*"</span>
+
+<span class="cm"># コンテンツのプリロード（事前キャッシュ）</span>
+az cdn endpoint load --name myCdnEndpoint \
+  --profile-name myCdnProfile --resource-group myRG \
+  --content-paths <span class="str">"/images/hero.jpg"</span></pre>
+    </div>
+
+    <div class="info-box note">
+      <strong>パージ vs プリロード</strong>
+      <strong>パージ</strong>: キャッシュされたコンテンツを削除（更新を即時反映したいとき）。
+      <strong>プリロード</strong>: コンテンツを事前にエッジにキャッシュ（大きなファイルの初回アクセスを高速化）。
+    </div>
+  </div>
+
+  <!-- ==================== Application Insights ==================== -->
+  <div class="section">
+    <h3>3. Application Insights</h3>
+    <p>Application Insights は、アプリケーションのパフォーマンス管理（APM）サービスです。</p>
+
+    <h4>テレメトリの種類</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>種類</th><th>説明</th><th>例</th></tr>
+        <tr><td>Request</td><td>サーバーが受信したHTTPリクエスト</td><td>API呼び出し</td></tr>
+        <tr><td>Dependency</td><td>外部サービスへの呼び出し</td><td>DB、HTTP、Redis</td></tr>
+        <tr><td>Exception</td><td>例外とスタックトレース</td><td>NullReferenceException</td></tr>
+        <tr><td>Trace</td><td>診断ログメッセージ</td><td>ILogger 出力</td></tr>
+        <tr><td>Metric</td><td>数値データ（集計済み）</td><td>応答時間、CPU使用率</td></tr>
+        <tr><td>PageView</td><td>ブラウザページの読み込み</td><td>ページロード時間</td></tr>
+        <tr><td>Event</td><td>ユーザーアクションや業務イベント</td><td>ボタンクリック</td></tr>
+      </table>
+    </div>
+
+    <h4>カスタムテレメトリ（C#）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// TelemetryClient の使用</span>
+<span class="kw">var</span> <span class="attr">telemetry</span> = <span class="kw">new</span> <span class="ty">TelemetryClient</span>();
+
+<span class="cm">// カスタムイベント</span>
+telemetry.<span class="fn">TrackEvent</span>(<span class="str">"OrderPlaced"</span>,
+    <span class="kw">new</span> Dictionary&lt;<span class="kw">string</span>, <span class="kw">string</span>&gt; { {<span class="str">"OrderId"</span>, <span class="str">"12345"</span>} },
+    <span class="kw">new</span> Dictionary&lt;<span class="kw">string</span>, <span class="kw">double</span>&gt; { {<span class="str">"Amount"</span>, <span class="num">99.99</span>} });
+
+<span class="cm">// カスタムメトリック</span>
+telemetry.<span class="fn">TrackMetric</span>(<span class="str">"QueueLength"</span>, <span class="num">42</span>);
+
+<span class="cm">// 例外の追跡</span>
+<span class="kw">try</span> { <span class="cm">/* 処理 */</span> }
+<span class="kw">catch</span> (<span class="ty">Exception</span> <span class="attr">ex</span>)
+{
+    telemetry.<span class="fn">TrackException</span>(ex);
+    <span class="kw">throw</span>;
+}
+
+<span class="cm">// 依存関係の追跡</span>
+<span class="kw">using</span> (<span class="kw">var</span> <span class="attr">operation</span> = telemetry.<span class="fn">StartOperation</span>&lt;<span class="ty">DependencyTelemetry</span>&gt;(<span class="str">"MyExternalApi"</span>))
+{
+    <span class="cm">// 外部API呼び出し</span>
+    operation.Telemetry.Type = <span class="str">"HTTP"</span>;
+    operation.Telemetry.Target = <span class="str">"api.example.com"</span>;
+    operation.Telemetry.Success = <span class="kw">true</span>;
+}</pre>
+    </div>
+
+    <h4>可用性テスト</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>種類</th><th>説明</th><th>認証</th></tr>
+        <tr><td>URL Ping テスト</td><td>単一URLのHTTPステータス確認</td><td>不可</td></tr>
+        <tr><td>Standard テスト</td><td>SSL証明書、HTTPヘッダー、カスタムリクエスト</td><td>可</td></tr>
+        <tr><td>カスタムTrackAvailability</td><td>コードベースの可用性テスト</td><td>可</td></tr>
+      </table>
+    </div>
+
+    <h4>KQL（Kusto Query Language）基本</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">KQL</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// 過去24時間の失敗リクエスト</span>
+requests
+| <span class="kw">where</span> timestamp > <span class="fn">ago</span>(<span class="num">24</span>h)
+| <span class="kw">where</span> success == <span class="kw">false</span>
+| <span class="kw">summarize</span> <span class="fn">count</span>() <span class="kw">by</span> resultCode
+| <span class="kw">order by</span> count_ <span class="kw">desc</span>
+
+<span class="cm">// 応答時間の遅いリクエストトップ10</span>
+requests
+| <span class="kw">where</span> timestamp > <span class="fn">ago</span>(<span class="num">1</span>h)
+| <span class="kw">top</span> <span class="num">10</span> <span class="kw">by</span> duration <span class="kw">desc</span>
+| <span class="kw">project</span> name, duration, resultCode
+
+<span class="cm">// 例外の集計</span>
+exceptions
+| <span class="kw">where</span> timestamp > <span class="fn">ago</span>(<span class="num">7</span>d)
+| <span class="kw">summarize</span> <span class="fn">count</span>() <span class="kw">by</span> type
+| <span class="kw">order by</span> count_ <span class="kw">desc</span></pre>
+    </div>
+
+    <div class="info-box tip">
+      <strong>アプリケーションマップ</strong>
+      Application Insights のアプリケーションマップは、分散アプリケーションのコンポーネント間の依存関係を視覚化します。ボトルネックや障害のあるコンポーネントを特定できます。
+    </div>
+  </div>
+
+  <!-- ==================== Quiz ==================== -->
+  <div class="quiz-section" data-module="monitor">
+    <h3>&#128221; 確認テスト</h3>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q1</span>
+      <p class="q-text">Cache-Aside パターンの正しい手順はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q1" value="a"> キャッシュ確認 → ミスならDB取得 → キャッシュに書込 → 返却</label></li>
+        <li><label><input type="radio" name="q1" value="b"> DB取得 → キャッシュに書込 → キャッシュから返却</label></li>
+        <li><label><input type="radio" name="q1" value="c"> キャッシュとDBに同時書込 → キャッシュから返却</label></li>
+        <li><label><input type="radio" name="q1" value="d"> キャッシュ確認 → 常にDB取得 → キャッシュ更新</label></li>
+      </ul>
+      <div class="q-explanation">Cache-Aside は、まずキャッシュを確認し、ヒットすればキャッシュから返却。ミスの場合のみDBから取得してキャッシュに書き込み、結果を返却します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q2</span>
+      <p class="q-text">Azure Cache for Redis で VNet 統合とデータ永続化をサポートする最小の SKU はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q2" value="a"> Basic</label></li>
+        <li><label><input type="radio" name="q2" value="b"> Standard</label></li>
+        <li><label><input type="radio" name="q2" value="c"> Premium</label></li>
+        <li><label><input type="radio" name="q2" value="d"> Enterprise</label></li>
+      </ul>
+      <div class="q-explanation">VNet 統合とデータ永続化（RDB/AOF）は Premium SKU 以上でサポートされます。Basic/Standard では利用できません。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q3</span>
+      <p class="q-text">CDN でキャッシュされたコンテンツを即座に無効化するコマンドはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q3" value="a"> az cdn endpoint load</label></li>
+        <li><label><input type="radio" name="q3" value="b"> az cdn endpoint purge</label></li>
+        <li><label><input type="radio" name="q3" value="c"> az cdn endpoint delete</label></li>
+        <li><label><input type="radio" name="q3" value="d"> az cdn endpoint refresh</label></li>
+      </ul>
+      <div class="q-explanation"><code>az cdn endpoint purge</code> はキャッシュのパージ（無効化）です。<code>load</code> はプリロード（事前キャッシュ）、<code>delete</code> はエンドポイント自体の削除です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q4</span>
+      <p class="q-text">Application Insights で外部データベースへの呼び出しを追跡するテレメトリの種類はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q4" value="a"> Request</label></li>
+        <li><label><input type="radio" name="q4" value="b"> Trace</label></li>
+        <li><label><input type="radio" name="q4" value="c"> Event</label></li>
+        <li><label><input type="radio" name="q4" value="d"> Dependency</label></li>
+      </ul>
+      <div class="q-explanation">Dependency テレメトリは、外部サービス（データベース、HTTP API、Redis等）への呼び出しを追跡します。Request はサーバーが受信したリクエストです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q5</span>
+      <p class="q-text"><code>TelemetryClient.TrackEvent()</code> の主な用途はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q5" value="a"> ユーザーアクションやビジネスイベントの記録</label></li>
+        <li><label><input type="radio" name="q5" value="b"> 例外の記録</label></li>
+        <li><label><input type="radio" name="q5" value="c"> HTTPリクエストの記録</label></li>
+        <li><label><input type="radio" name="q5" value="d"> メトリック値の記録</label></li>
+      </ul>
+      <div class="q-explanation"><code>TrackEvent</code> はカスタムイベント（ボタンクリック、注文完了等のビジネスイベント）を記録します。例外は <code>TrackException</code>、メトリックは <code>TrackMetric</code> を使います。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q6</span>
+      <p class="q-text">Redis のキャッシュでデータの有効期限を設定する機能は何ですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q6" value="a"> SLA</label></li>
+        <li><label><input type="radio" name="q6" value="b"> RU</label></li>
+        <li><label><input type="radio" name="q6" value="c"> TTL（Time To Live）</label></li>
+        <li><label><input type="radio" name="q6" value="d"> AOF</label></li>
+      </ul>
+      <div class="q-explanation">TTL（Time To Live）はキーの有効期限を設定する機能です。期限切れのキーは自動的に削除されます。C#では <code>StringSetAsync(key, value, TimeSpan.FromHours(1))</code> のように設定します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q7</span>
+      <p class="q-text">CDN でコンテンツを事前にエッジサーバーにキャッシュする操作はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q7" value="a"> パージ（Purge）</label></li>
+        <li><label><input type="radio" name="q7" value="b"> プリロード（Load）</label></li>
+        <li><label><input type="radio" name="q7" value="c"> ウォームアップ（Warmup）</label></li>
+        <li><label><input type="radio" name="q7" value="d"> プリフェッチ（Prefetch）</label></li>
+      </ul>
+      <div class="q-explanation">プリロード（<code>az cdn endpoint load</code>）はコンテンツを事前にエッジサーバーにキャッシュします。大きなファイルの初回アクセスを高速化する目的で使います。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q8</span>
+      <p class="q-text">Application Insights の可用性テストで、HTTP ヘッダーのカスタマイズが可能なのはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q8" value="a"> URL Ping テストのみ</label></li>
+        <li><label><input type="radio" name="q8" value="b"> URL Ping テストと Standard テスト</label></li>
+        <li><label><input type="radio" name="q8" value="c"> カスタム TrackAvailability のみ</label></li>
+        <li><label><input type="radio" name="q8" value="d"> Standard テストとカスタム TrackAvailability</label></li>
+      </ul>
+      <div class="q-explanation">Standard テストではHTTPヘッダーのカスタマイズ、SSL証明書の検証、カスタムリクエストボディの設定が可能です。URL Ping テストは単純なHTTPステータス確認のみです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q9</span>
+      <p class="q-text">KQL で過去1時間のデータに絞り込むフィルタはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q9" value="a"> where timestamp > ago(1h)</label></li>
+        <li><label><input type="radio" name="q9" value="b"> where time > last(1h)</label></li>
+        <li><label><input type="radio" name="q9" value="c"> filter timestamp > hours(1)</label></li>
+        <li><label><input type="radio" name="q9" value="d"> where date > now(-1h)</label></li>
+      </ul>
+      <div class="q-explanation">KQL では <code>ago()</code> 関数を使って相対的な時間を指定します。<code>where timestamp > ago(1h)</code> は過去1時間以内のデータに絞り込みます。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q10</span>
+      <p class="q-text">Application Insights のアプリケーションマップの主な用途はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q10" value="a"> ユーザーセッションの記録</label></li>
+        <li><label><input type="radio" name="q10" value="b"> デプロイメントの管理</label></li>
+        <li><label><input type="radio" name="q10" value="c"> コンポーネント間の依存関係とボトルネックの視覚化</label></li>
+        <li><label><input type="radio" name="q10" value="d"> コスト分析</label></li>
+      </ul>
+      <div class="q-explanation">アプリケーションマップは、分散アプリケーションの各コンポーネント（Web App、DB、外部API等）間の依存関係を視覚的に表示し、パフォーマンスのボトルネックや障害を特定するために使用します。</div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn btn-primary quiz-check">採点する</button>
+      <button class="btn btn-secondary quiz-reset">リセット</button>
+    </div>
+    <div class="quiz-result"></div>
+  </div>
+
+  <div class="page-nav">
+    <a href="security.html" class="btn btn-secondary">&larr; セキュリティ</a>
+    <a href="integration.html" class="btn btn-primary">サービス連携 &rarr;</a>
+  </div>
+
+  <footer class="site-footer">AZ-204 学習ガイド &copy; 2026</footer>
+</main>
+
+<button class="scroll-top" aria-label="ページ上部へ">&#8679;</button>
+<script src="js/app.js"></script>
+</body>
+</html>

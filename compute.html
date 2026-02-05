@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コンピューティング | AZ-204 学習ガイド</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <button class="hamburger" aria-label="メニュー">&#9776;</button>
+  <h1>AZ-204 <span>Azure Developer Associate</span></h1>
+  <div class="header-actions">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切替">&#127769;</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">ホーム</div>
+    <a href="index.html"><span class="nav-icon">&#127968;</span> ダッシュボード</a>
+    <div class="sidebar-section-title">試験範囲</div>
+    <a href="compute.html"><span class="nav-icon">&#9881;</span> コンピューティング <span class="nav-badge">25-30%</span></a>
+    <a href="storage.html"><span class="nav-icon">&#128451;</span> ストレージ <span class="nav-badge">15-20%</span></a>
+    <a href="security.html"><span class="nav-icon">&#128274;</span> セキュリティ <span class="nav-badge">20-25%</span></a>
+    <a href="monitor.html"><span class="nav-icon">&#128200;</span> 監視・最適化 <span class="nav-badge">15-20%</span></a>
+    <a href="integration.html"><span class="nav-icon">&#128279;</span> サービス連携 <span class="nav-badge">15-20%</span></a>
+  </div>
+</nav>
+<div class="sidebar-overlay"></div>
+<div class="reading-progress" style="width:0"></div>
+
+<main class="main-content">
+  <div class="breadcrumb"><a href="index.html">ホーム</a> &gt; コンピューティング</div>
+  <div class="module-header">
+    <h2>&#9881; Azure コンピューティングソリューションの開発</h2>
+    <div class="subtitle">出題比率: 25-30% ― 試験で最も重要な領域</div>
+  </div>
+
+  <!-- ==================== App Service ==================== -->
+  <div class="section">
+    <h3>1. Azure App Service Web Apps</h3>
+    <p>App Service は、Web アプリ、REST API、モバイルバックエンドをホスティングするフルマネージドプラットフォームです。</p>
+
+    <h4>App Service プラン</h4>
+    <p>App Service プランは、アプリが動作するコンピューティングリソースを定義します。</p>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>レベル</th><th>プラン</th><th>特徴</th><th>スケール</th></tr>
+        <tr><td>共有</td><td>Free / Shared</td><td>開発・テスト用。カスタムドメイン不可(Free)</td><td>スケールアウト不可</td></tr>
+        <tr><td>専用</td><td>Basic</td><td>開発・テスト向け。手動スケール</td><td>最大3インスタンス</td></tr>
+        <tr><td>専用</td><td>Standard</td><td>本番ワークロード。自動スケール・スロット</td><td>最大10インスタンス</td></tr>
+        <tr><td>専用</td><td>Premium v3</td><td>高パフォーマンス・VNet統合</td><td>最大30インスタンス</td></tr>
+        <tr><td>分離</td><td>Isolated v2</td><td>専用環境(ASE)・ネットワーク分離</td><td>最大100インスタンス</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box important">
+      <strong>試験ポイント</strong>
+      デプロイメントスロットは Standard 以上のプランで利用可能です。Free/Shared/Basic では使えません。
+    </div>
+
+    <h4>Web アプリの作成（Azure CLI）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># リソースグループの作成</span>
+az group create --name myResourceGroup --location japaneast
+
+<span class="cm"># App Service プランの作成</span>
+az appservice plan create \
+  --name myAppServicePlan \
+  --resource-group myResourceGroup \
+  --sku S1 --is-linux
+
+<span class="cm"># Web アプリの作成</span>
+az webapp create \
+  --resource-group myResourceGroup \
+  --plan myAppServicePlan \
+  --name myUniqueAppName \
+  --runtime <span class="str">"DOTNETCORE:8.0"</span></pre>
+    </div>
+
+    <h4>アプリケーション設定と接続文字列</h4>
+    <p>App Service では、アプリケーション設定は<strong>環境変数</strong>としてアプリに渡されます。</p>
+    <ul>
+      <li>アプリ設定は OS の環境変数として公開される</li>
+      <li>接続文字列も環境変数として公開される（プレフィックス付き: <code>SQLAZURECONNSTR_</code> 等）</li>
+      <li>設定値は Azure Portal 上で暗号化されて保存される</li>
+      <li>スロットに固定（sticky）する設定も可能</li>
+    </ul>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># アプリ設定の追加</span>
+az webapp config appsettings set \
+  --resource-group myResourceGroup \
+  --name myUniqueAppName \
+  --settings <span class="str">MY_SETTING=value1</span> <span class="str">DB_HOST=mydb.postgres.database.azure.com</span>
+
+<span class="cm"># スロット固定設定</span>
+az webapp config appsettings set \
+  --resource-group myResourceGroup \
+  --name myUniqueAppName \
+  --slot-settings <span class="str">SLOT_SPECIFIC=true</span></pre>
+    </div>
+
+    <h4>デプロイメントスロット</h4>
+    <p>デプロイメントスロットを使うと、ダウンタイムなしでアプリをデプロイできます。</p>
+    <ul>
+      <li><strong>スワップ</strong>: staging スロットと production スロットを入れ替え</li>
+      <li><strong>自動スワップ</strong>: デプロイ完了後に自動的にスワップ</li>
+      <li><strong>トラフィックルーティング</strong>: 一定割合のトラフィックを別スロットに転送（A/Bテスト）</li>
+    </ul>
+
+    <div class="info-box note">
+      <strong>スワップ時の動作</strong>
+      スワップ時にリセットされる設定: 接続文字列のスロット固定設定、認証設定。
+      スワップ時にリセットされない設定: カスタムドメイン、SSL証明書、スケール設定。
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># スロットの作成</span>
+az webapp deployment slot create \
+  --name myUniqueAppName \
+  --resource-group myResourceGroup \
+  --slot staging
+
+<span class="cm"># スロットのスワップ</span>
+az webapp deployment slot swap \
+  --name myUniqueAppName \
+  --resource-group myResourceGroup \
+  --slot staging \
+  --target-slot production</pre>
+    </div>
+
+    <h4>組み込み認証（Easy Auth）</h4>
+    <p>App Service にはコード変更不要の認証機能が組み込まれています。</p>
+    <ul>
+      <li>Microsoft Entra ID（Azure AD）</li>
+      <li>Facebook / Google / Twitter / GitHub</li>
+      <li>認証トークンはリクエストヘッダーで渡される（<code>X-MS-TOKEN-*</code>）</li>
+    </ul>
+  </div>
+
+  <!-- ==================== Azure Functions ==================== -->
+  <div class="section">
+    <h3>2. Azure Functions</h3>
+    <p>Azure Functions は、イベント駆動型のサーバーレスコンピューティングサービスです。</p>
+
+    <h4>ホスティングプラン比較</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>プラン</th><th>スケール</th><th>最大タイムアウト</th><th>VNet</th><th>料金</th></tr>
+        <tr><td>Consumption</td><td>イベント駆動で自動</td><td>5分(既定)/10分(最大)</td><td>不可</td><td>実行回数+実行時間</td></tr>
+        <tr><td>Premium</td><td>イベント駆動で自動（事前ウォーム）</td><td>無制限</td><td>可</td><td>常時ウォームインスタンス+追加</td></tr>
+        <tr><td>Dedicated (App Service)</td><td>手動/自動スケール</td><td>無制限</td><td>可</td><td>App Serviceプラン料金</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box important">
+      <strong>試験ポイント</strong>
+      Consumption プランのデフォルトタイムアウトは5分、最大10分。長時間処理にはPremiumまたはDedicatedプランを使用します。
+    </div>
+
+    <h4>トリガーとバインディング</h4>
+    <p>トリガーは関数の起動方法を定義し、バインディングは入出力データの接続を宣言的に行います。</p>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>トリガー</th><th>入力バインディング</th><th>出力バインディング</th></tr>
+        <tr><td>HTTP</td><td>-</td><td>HTTP Response</td></tr>
+        <tr><td>Timer</td><td>-</td><td>-</td></tr>
+        <tr><td>Blob Storage</td><td>Blob</td><td>Blob</td></tr>
+        <tr><td>Queue Storage</td><td>-</td><td>Queue</td></tr>
+        <tr><td>Cosmos DB</td><td>Cosmos DB</td><td>Cosmos DB</td></tr>
+        <tr><td>Event Grid</td><td>-</td><td>Event Grid</td></tr>
+        <tr><td>Service Bus</td><td>-</td><td>Service Bus</td></tr>
+      </table>
+    </div>
+
+    <h4>HTTP トリガー関数（C#）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre>[<span class="ty">Function</span>(<span class="str">"HelloWorld"</span>)]
+<span class="kw">public</span> <span class="kw">static</span> <span class="ty">IActionResult</span> <span class="fn">Run</span>(
+    [<span class="ty">HttpTrigger</span>(<span class="ty">AuthorizationLevel</span>.Function,
+      <span class="str">"get"</span>, <span class="str">"post"</span>)] <span class="ty">HttpRequest</span> <span class="attr">req</span>,
+    <span class="ty">ILogger</span> <span class="attr">log</span>)
+{
+    log.<span class="fn">LogInformation</span>(<span class="str">"HTTP trigger function processed a request."</span>);
+    <span class="kw">string</span> <span class="attr">name</span> = req.Query[<span class="str">"name"</span>];
+    <span class="kw">return</span> <span class="kw">new</span> <span class="ty">OkObjectResult</span>(<span class="str">$"Hello, {name}"</span>);
+}</pre>
+    </div>
+
+    <h4>Timer トリガー（CRON式）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// 5分ごとに実行: "0 */5 * * * *"</span>
+<span class="cm">// 毎日午前9時: "0 0 9 * * *"</span>
+<span class="cm">// CRON形式: {秒} {分} {時} {日} {月} {曜日}</span>
+[<span class="ty">Function</span>(<span class="str">"TimerJob"</span>)]
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">void</span> <span class="fn">Run</span>(
+    [<span class="ty">TimerTrigger</span>(<span class="str">"0 */5 * * * *"</span>)] <span class="ty">TimerInfo</span> <span class="attr">timer</span>,
+    <span class="ty">ILogger</span> <span class="attr">log</span>)
+{
+    log.<span class="fn">LogInformation</span>(<span class="str">$"Timer executed at: {DateTime.Now}"</span>);
+}</pre>
+    </div>
+
+    <h4>Durable Functions</h4>
+    <p>Durable Functions は、ステートフルなワークフローをサーバーレスで実現する拡張機能です。</p>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>パターン</th><th>説明</th><th>ユースケース</th></tr>
+        <tr><td>Function Chaining</td><td>関数を順番に実行</td><td>注文処理パイプライン</td></tr>
+        <tr><td>Fan-out/Fan-in</td><td>複数関数を並列実行→結果を集約</td><td>バッチ処理</td></tr>
+        <tr><td>Async HTTP APIs</td><td>外部からの長時間操作の状態確認</td><td>レポート生成</td></tr>
+        <tr><td>Monitor</td><td>定期的にポーリング</td><td>ジョブ完了待ち</td></tr>
+        <tr><td>Human Interaction</td><td>人間の承認を待つ</td><td>承認ワークフロー</td></tr>
+      </table>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// オーケストレーター関数（Function Chaining）</span>
+[<span class="ty">Function</span>(<span class="str">"ChainOrchestrator"</span>)]
+<span class="kw">public</span> <span class="kw">static</span> <span class="kw">async</span> Task&lt;<span class="ty">string</span>&gt; <span class="fn">RunOrchestrator</span>(
+    [<span class="ty">OrchestrationTrigger</span>] <span class="ty">TaskOrchestrationContext</span> <span class="attr">context</span>)
+{
+    <span class="kw">var</span> <span class="attr">result1</span> = <span class="kw">await</span> context.<span class="fn">CallActivityAsync</span>&lt;<span class="ty">string</span>&gt;(<span class="str">"Step1"</span>, <span class="kw">null</span>);
+    <span class="kw">var</span> <span class="attr">result2</span> = <span class="kw">await</span> context.<span class="fn">CallActivityAsync</span>&lt;<span class="ty">string</span>&gt;(<span class="str">"Step2"</span>, result1);
+    <span class="kw">var</span> <span class="attr">result3</span> = <span class="kw">await</span> context.<span class="fn">CallActivityAsync</span>&lt;<span class="ty">string</span>&gt;(<span class="str">"Step3"</span>, result2);
+    <span class="kw">return</span> result3;
+}</pre>
+    </div>
+  </div>
+
+  <!-- ==================== Containers ==================== -->
+  <div class="section">
+    <h3>3. コンテナソリューション</h3>
+
+    <h4>Azure Container Registry (ACR)</h4>
+    <p>ACR はプライベートな Docker コンテナレジストリです。</p>
+
+    <div class="table-wrapper">
+      <table>
+        <tr><th>SKU</th><th>ストレージ</th><th>Webhook</th><th>Geo レプリケーション</th><th>ACR Tasks</th></tr>
+        <tr><td>Basic</td><td>10 GB</td><td>2</td><td>不可</td><td>可</td></tr>
+        <tr><td>Standard</td><td>100 GB</td><td>10</td><td>不可</td><td>可</td></tr>
+        <tr><td>Premium</td><td>500 GB</td><td>500</td><td>可</td><td>可</td></tr>
+      </table>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># ACR の作成</span>
+az acr create --resource-group myRG --name myRegistry --sku Standard
+
+<span class="cm"># Docker イメージのビルド（ACR Tasks）</span>
+az acr build --registry myRegistry --image myapp:v1 .
+
+<span class="cm"># ACR へのログイン</span>
+az acr login --name myRegistry
+
+<span class="cm"># イメージのプッシュ</span>
+docker tag myapp:v1 myRegistry.azurecr.io/myapp:v1
+docker push myRegistry.azurecr.io/myapp:v1</pre>
+    </div>
+
+    <h4>Azure Container Instances (ACI)</h4>
+    <p>ACI は、最も高速にコンテナを実行する方法です。VMの管理不要で、秒単位の課金です。</p>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># コンテナインスタンスの作成</span>
+az container create \
+  --resource-group myRG \
+  --name mycontainer \
+  --image myRegistry.azurecr.io/myapp:v1 \
+  --cpu <span class="num">1</span> --memory <span class="num">1.5</span> \
+  --registry-login-server myRegistry.azurecr.io \
+  --registry-username myUser \
+  --registry-password myPass \
+  --dns-name-label myapp-demo \
+  --ports <span class="num">80</span>
+
+<span class="cm"># コンテナグループ（YAML定義）</span>
+az container create --resource-group myRG \
+  --file deploy-aci.yaml</pre>
+    </div>
+
+    <div class="info-box tip">
+      <strong>コンテナグループ</strong>
+      ACI ではコンテナグループにより複数のコンテナを同一ホスト上で実行できます（サイドカーパターン）。コンテナグループ内のコンテナは、ライフサイクル、リソース、ローカルネットワーク、ストレージボリュームを共有します。
+    </div>
+
+    <h4>Azure Container Apps</h4>
+    <p>Container Apps は、マイクロサービスやイベント駆動アプリに最適なサーバーレスコンテナプラットフォームです。</p>
+
+    <ul>
+      <li><strong>リビジョン</strong>: デプロイごとに不変のスナップショットが作成される</li>
+      <li><strong>スケーリングルール</strong>: HTTP同時リクエスト数、Queue長、カスタムメトリクスに基づく</li>
+      <li><strong>0へのスケールイン</strong>が可能（HTTPトリガー以外の場合）</li>
+      <li><strong>Dapr統合</strong>: サービス間通信、状態管理、Pub/Sub</li>
+      <li><strong>イングレス</strong>: 外部/内部HTTPトラフィックの管理</li>
+    </ul>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm"># Container Apps 環境の作成</span>
+az containerapp env create \
+  --name myEnvironment \
+  --resource-group myRG \
+  --location japaneast
+
+<span class="cm"># Container App の作成</span>
+az containerapp create \
+  --name myapp \
+  --resource-group myRG \
+  --environment myEnvironment \
+  --image myRegistry.azurecr.io/myapp:v1 \
+  --target-port <span class="num">80</span> \
+  --ingress external \
+  --min-replicas <span class="num">0</span> \
+  --max-replicas <span class="num">10</span></pre>
+    </div>
+
+    <div class="info-box warn">
+      <strong>ACI vs Container Apps</strong>
+      ACI: 短時間のタスク、バッチ処理に最適。Container Apps: 長時間稼働するマイクロサービス、自動スケーリングが必要な場合に最適。
+    </div>
+  </div>
+
+  <!-- ==================== Quiz ==================== -->
+  <div class="quiz-section" data-module="compute">
+    <h3>&#128221; 確認テスト</h3>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q1</span>
+      <p class="q-text">App Service でデプロイメントスロットを使用するために必要な最小のプランはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q1" value="a"> Free</label></li>
+        <li><label><input type="radio" name="q1" value="b"> Basic</label></li>
+        <li><label><input type="radio" name="q1" value="c"> Standard</label></li>
+        <li><label><input type="radio" name="q1" value="d"> Premium</label></li>
+      </ul>
+      <div class="q-explanation">デプロイメントスロットは Standard (S1) 以上のプランで利用可能です。Free、Shared、Basic プランではスロット機能は使えません。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q2</span>
+      <p class="q-text">Azure Functions の Consumption プランにおけるデフォルトのタイムアウトは何分ですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q2" value="a"> 1分</label></li>
+        <li><label><input type="radio" name="q2" value="b"> 5分</label></li>
+        <li><label><input type="radio" name="q2" value="c"> 10分</label></li>
+        <li><label><input type="radio" name="q2" value="d"> 30分</label></li>
+      </ul>
+      <div class="q-explanation">Consumption プランのデフォルトタイムアウトは5分です。host.json の functionTimeout で最大10分まで延長可能です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q3</span>
+      <p class="q-text">Durable Functions で、複数のアクティビティ関数を並列に実行して結果を集約するパターンはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q3" value="a"> Function Chaining</label></li>
+        <li><label><input type="radio" name="q3" value="b"> Async HTTP APIs</label></li>
+        <li><label><input type="radio" name="q3" value="c"> Monitor</label></li>
+        <li><label><input type="radio" name="q3" value="d"> Fan-out / Fan-in</label></li>
+      </ul>
+      <div class="q-explanation">Fan-out/Fan-in パターンは、複数の関数を並列に実行し、全ての完了を待って結果を集約します。Function Chaining は逐次実行です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q4</span>
+      <p class="q-text">Azure Container Registry で Geo レプリケーションをサポートする SKU はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q4" value="a"> Premium</label></li>
+        <li><label><input type="radio" name="q4" value="b"> Standard</label></li>
+        <li><label><input type="radio" name="q4" value="c"> Basic</label></li>
+        <li><label><input type="radio" name="q4" value="d"> すべての SKU</label></li>
+      </ul>
+      <div class="q-explanation">Geo レプリケーションは Premium SKU でのみ利用可能です。複数リージョンにレジストリを複製し、低レイテンシーのアクセスを実現します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q5</span>
+      <p class="q-text">Azure Container Instances (ACI) の主な特徴として正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q5" value="a"> 自動スケーリングが組み込まれている</label></li>
+        <li><label><input type="radio" name="q5" value="b"> VM管理不要で秒単位の課金</label></li>
+        <li><label><input type="radio" name="q5" value="c"> Kubernetes クラスターが必要</label></li>
+        <li><label><input type="radio" name="q5" value="d"> 永続的なストレージが標準装備</label></li>
+      </ul>
+      <div class="q-explanation">ACI は VM の管理が不要で、秒単位で課金されます。自動スケーリングは組み込まれておらず（Container Apps がその役割）、Kubernetes も不要です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q6</span>
+      <p class="q-text">App Service のスロットスワップ時に、ターゲットスロットに引き継がれない（リセットされる）ものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q6" value="a"> カスタムドメイン</label></li>
+        <li><label><input type="radio" name="q6" value="b"> SSL証明書</label></li>
+        <li><label><input type="radio" name="q6" value="c"> スロット固定の接続文字列</label></li>
+        <li><label><input type="radio" name="q6" value="d"> スケール設定</label></li>
+      </ul>
+      <div class="q-explanation">スロット固定（slot-specific）に設定されたアプリ設定や接続文字列は、スワップ時にそのスロットに残り、アプリと一緒には移動しません。カスタムドメインやSSL証明書、スケール設定はスワップに関係しません。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q7</span>
+      <p class="q-text">Azure Functions で、Cosmos DB のドキュメントが変更されたときに自動的に関数を実行するには、どのトリガーを使用しますか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q7" value="a"> Cosmos DB トリガー（Change Feed）</label></li>
+        <li><label><input type="radio" name="q7" value="b"> HTTP トリガー</label></li>
+        <li><label><input type="radio" name="q7" value="c"> Timer トリガー</label></li>
+        <li><label><input type="radio" name="q7" value="d"> Event Grid トリガー</label></li>
+      </ul>
+      <div class="q-explanation">Cosmos DB トリガーは Change Feed を利用して、ドキュメントの作成・更新を検出し、自動的に関数を呼び出します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q8</span>
+      <p class="q-text">Azure Container Apps で、HTTP リクエストがないときにレプリカを0にスケールインできますか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q8" value="a"> すべてのトリガーで可能</label></li>
+        <li><label><input type="radio" name="q8" value="b"> 不可能、最低1レプリカ必要</label></li>
+        <li><label><input type="radio" name="q8" value="c"> Premium プランのみ可能</label></li>
+        <li><label><input type="radio" name="q8" value="d"> HTTP スケールルールを使用しない場合のみ可能</label></li>
+      </ul>
+      <div class="q-explanation">Container Apps では min-replicas を 0 に設定可能ですが、HTTP スケールルールを使用する場合はデフォルトで最低1レプリカが必要です。キューやカスタムメトリクスベースのスケーリングでは 0 へのスケールインが可能です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q9</span>
+      <p class="q-text"><code>az acr build</code> コマンドの特徴として正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q9" value="a"> ローカルで Docker イメージをビルドする</label></li>
+        <li><label><input type="radio" name="q9" value="b"> クラウド上で Docker イメージをビルドする</label></li>
+        <li><label><input type="radio" name="q9" value="c"> ローカルの Docker デーモンが必要</label></li>
+        <li><label><input type="radio" name="q9" value="d"> Premium SKU でのみ使用可能</label></li>
+      </ul>
+      <div class="q-explanation"><code>az acr build</code> は ACR Tasks を使ってクラウド上でイメージをビルドします。ローカルに Docker をインストールする必要がないのが大きな利点です。全SKUで利用可能です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q10</span>
+      <p class="q-text">Azure Functions で VNet 統合が必要な場合、どのホスティングプランを選択すべきですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q10" value="a"> Consumption プランのみ</label></li>
+        <li><label><input type="radio" name="q10" value="b"> Consumption または Premium</label></li>
+        <li><label><input type="radio" name="q10" value="c"> Premium または Dedicated プラン</label></li>
+        <li><label><input type="radio" name="q10" value="d"> すべてのプラン</label></li>
+      </ul>
+      <div class="q-explanation">VNet 統合は Premium プランと Dedicated (App Service) プランで利用可能です。Consumption プランでは VNet 統合はサポートされていません。</div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn btn-primary quiz-check">採点する</button>
+      <button class="btn btn-secondary quiz-reset">リセット</button>
+    </div>
+    <div class="quiz-result"></div>
+  </div>
+
+  <div class="page-nav">
+    <a href="index.html" class="btn btn-secondary">&larr; ホーム</a>
+    <a href="storage.html" class="btn btn-primary">ストレージ &rarr;</a>
+  </div>
+
+  <footer class="site-footer">AZ-204 学習ガイド &copy; 2026</footer>
+</main>
+
+<button class="scroll-top" aria-label="ページ上部へ">&#8679;</button>
+<script src="js/app.js"></script>
+</body>
+</html>

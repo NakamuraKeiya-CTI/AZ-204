@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストレージ | AZ-204 学習ガイド</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <button class="hamburger" aria-label="メニュー">&#9776;</button>
+  <h1>AZ-204 <span>Azure Developer Associate</span></h1>
+  <div class="header-actions">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="テーマ切替">&#127769;</button>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">ホーム</div>
+    <a href="index.html"><span class="nav-icon">&#127968;</span> ダッシュボード</a>
+    <div class="sidebar-section-title">試験範囲</div>
+    <a href="compute.html"><span class="nav-icon">&#9881;</span> コンピューティング <span class="nav-badge">25-30%</span></a>
+    <a href="storage.html"><span class="nav-icon">&#128451;</span> ストレージ <span class="nav-badge">15-20%</span></a>
+    <a href="security.html"><span class="nav-icon">&#128274;</span> セキュリティ <span class="nav-badge">20-25%</span></a>
+    <a href="monitor.html"><span class="nav-icon">&#128200;</span> 監視・最適化 <span class="nav-badge">15-20%</span></a>
+    <a href="integration.html"><span class="nav-icon">&#128279;</span> サービス連携 <span class="nav-badge">15-20%</span></a>
+  </div>
+</nav>
+<div class="sidebar-overlay"></div>
+<div class="reading-progress" style="width:0"></div>
+
+<main class="main-content">
+  <div class="breadcrumb"><a href="index.html">ホーム</a> &gt; ストレージ</div>
+  <div class="module-header">
+    <h2>&#128451; Azure ストレージソリューションの開発</h2>
+    <div class="subtitle">出題比率: 15-20%</div>
+  </div>
+
+  <!-- ==================== Cosmos DB ==================== -->
+  <div class="section">
+    <h3>1. Azure Cosmos DB</h3>
+    <p>Cosmos DB は、グローバル分散型のマルチモデルデータベースサービスです。ミリ秒単位のレイテンシーと99.999%の可用性を提供します。</p>
+
+    <h4>API の選択</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>API</th><th>データモデル</th><th>ユースケース</th></tr>
+        <tr><td>NoSQL (SQL)</td><td>JSON ドキュメント</td><td>新規開発（推奨）</td></tr>
+        <tr><td>MongoDB</td><td>BSON ドキュメント</td><td>MongoDB からの移行</td></tr>
+        <tr><td>Cassandra</td><td>列ファミリー</td><td>Cassandra からの移行</td></tr>
+        <tr><td>Gremlin</td><td>グラフ</td><td>グラフベースのリレーション</td></tr>
+        <tr><td>Table</td><td>キー・値</td><td>Azure Table Storage からの移行</td></tr>
+      </table>
+    </div>
+
+    <h4>パーティショニング</h4>
+    <p>Cosmos DB のパフォーマンスとスケーラビリティの鍵はパーティションキーの選択です。</p>
+    <ul>
+      <li><strong>論理パーティション</strong>: 同じパーティションキー値を持つアイテムの集合（最大20GB）</li>
+      <li><strong>物理パーティション</strong>: 複数の論理パーティションを格納する内部的な単位（最大50GB）</li>
+      <li>パーティションキーはアイテム作成後に変更不可</li>
+    </ul>
+
+    <div class="info-box important">
+      <strong>パーティションキー選択のベストプラクティス</strong>
+      カーディナリティが高く（多くの異なる値を持つ）、読み取り/書き込みが均等に分散されるプロパティを選択します。例: <code>/userId</code>, <code>/tenantId</code>。<code>/category</code> のように値が少ないものは避けてください（ホットパーティション発生）。
+    </div>
+
+    <h4>整合性レベル</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>レベル</th><th>整合性</th><th>可用性</th><th>レイテンシー</th><th>RU コスト</th></tr>
+        <tr><td>Strong</td><td>最高（線形化可能）</td><td>最低</td><td>最高</td><td>最高</td></tr>
+        <tr><td>Bounded Staleness</td><td>高（遅延上限あり）</td><td>低</td><td>高</td><td>高</td></tr>
+        <tr><td>Session</td><td>中（セッション内一貫）</td><td>高</td><td>中</td><td>中</td></tr>
+        <tr><td>Consistent Prefix</td><td>低（順序保証）</td><td>高</td><td>低</td><td>低</td></tr>
+        <tr><td>Eventual</td><td>最低（結果整合性）</td><td>最高</td><td>最低</td><td>最低</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box note">
+      <strong>デフォルトの整合性レベル</strong>
+      Cosmos DB のデフォルトは <strong>Session</strong> 整合性です。多くのユースケースで推奨されます。
+    </div>
+
+    <h4>CRUD 操作（.NET SDK）</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// Cosmos Client の作成</span>
+<span class="ty">CosmosClient</span> <span class="attr">client</span> = <span class="kw">new</span> <span class="ty">CosmosClient</span>(<span class="str">"endpoint"</span>, <span class="str">"key"</span>);
+<span class="ty">Database</span> <span class="attr">database</span> = <span class="kw">await</span> client.<span class="fn">CreateDatabaseIfNotExistsAsync</span>(<span class="str">"mydb"</span>);
+<span class="ty">Container</span> <span class="attr">container</span> = <span class="kw">await</span> database.<span class="fn">CreateContainerIfNotExistsAsync</span>(
+    <span class="str">"items"</span>, <span class="str">"/partitionKey"</span>);
+
+<span class="cm">// アイテムの作成</span>
+<span class="kw">var</span> <span class="attr">item</span> = <span class="kw">new</span> { id = <span class="str">"1"</span>, partitionKey = <span class="str">"pk1"</span>, name = <span class="str">"Sample"</span> };
+<span class="kw">await</span> container.<span class="fn">CreateItemAsync</span>(item, <span class="kw">new</span> <span class="ty">PartitionKey</span>(<span class="str">"pk1"</span>));
+
+<span class="cm">// アイテムの読み取り（ポイントリード - 最も効率的）</span>
+<span class="kw">var</span> <span class="attr">response</span> = <span class="kw">await</span> container.<span class="fn">ReadItemAsync</span>&lt;<span class="kw">dynamic</span>&gt;(
+    <span class="str">"1"</span>, <span class="kw">new</span> <span class="ty">PartitionKey</span>(<span class="str">"pk1"</span>));
+
+<span class="cm">// クエリの実行</span>
+<span class="kw">var</span> <span class="attr">query</span> = container.<span class="fn">GetItemQueryIterator</span>&lt;<span class="kw">dynamic</span>&gt;(
+    <span class="str">"SELECT * FROM c WHERE c.name = 'Sample'"</span>);
+<span class="kw">while</span> (query.HasMoreResults)
+{
+    <span class="kw">var</span> <span class="attr">results</span> = <span class="kw">await</span> query.<span class="fn">ReadNextAsync</span>();
+    <span class="cm">// results を処理</span>
+}
+
+<span class="cm">// アイテムの置換</span>
+<span class="kw">await</span> container.<span class="fn">ReplaceItemAsync</span>(updatedItem, <span class="str">"1"</span>,
+    <span class="kw">new</span> <span class="ty">PartitionKey</span>(<span class="str">"pk1"</span>));
+
+<span class="cm">// アイテムの削除</span>
+<span class="kw">await</span> container.<span class="fn">DeleteItemAsync</span>&lt;<span class="kw">dynamic</span>&gt;(<span class="str">"1"</span>,
+    <span class="kw">new</span> <span class="ty">PartitionKey</span>(<span class="str">"pk1"</span>));</pre>
+    </div>
+
+    <h4>変更フィード（Change Feed）</h4>
+    <p>変更フィードは、コンテナ内のアイテムの作成・更新を時系列順に追跡する機能です。</p>
+    <ul>
+      <li>作成と更新のみ検出（削除は検出されない）</li>
+      <li>変更フィードプロセッサ、Azure Functions トリガーで利用可能</li>
+      <li>リースコンテナを使って処理位置を追跡</li>
+    </ul>
+
+    <h4>Request Unit (RU)</h4>
+    <p>RU はCosmos DBの課金・スループットの単位です。1RU = 1KBのアイテムを1回読み取るコスト。</p>
+    <ul>
+      <li>ポイントリード（id + パーティションキー）: 最も低コスト（1 RU）</li>
+      <li>クエリ: スキャン範囲に応じてコスト増加</li>
+      <li>書き込み: 読み取りより高コスト（約5-10 RU）</li>
+    </ul>
+  </div>
+
+  <!-- ==================== Blob Storage ==================== -->
+  <div class="section">
+    <h3>2. Azure Blob Storage</h3>
+    <p>Blob Storage は、大量の非構造化データ（テキスト、バイナリ）を格納するオブジェクトストレージです。</p>
+
+    <h4>Blob の種類</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>種類</th><th>説明</th><th>最大サイズ</th><th>ユースケース</th></tr>
+        <tr><td>Block Blob</td><td>ブロック単位で構成</td><td>約190.7 TB</td><td>ファイル、画像、動画</td></tr>
+        <tr><td>Append Blob</td><td>追記専用</td><td>約195 GB</td><td>ログファイル</td></tr>
+        <tr><td>Page Blob</td><td>ランダムアクセス最適化</td><td>8 TB</td><td>VHDディスク</td></tr>
+      </table>
+    </div>
+
+    <h4>アクセス層</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>層</th><th>ストレージコスト</th><th>アクセスコスト</th><th>最小保持期間</th><th>ユースケース</th></tr>
+        <tr><td>Hot</td><td>高</td><td>低</td><td>なし</td><td>頻繁にアクセスされるデータ</td></tr>
+        <tr><td>Cool</td><td>中</td><td>中</td><td>30日</td><td>30日以上保存の低頻度アクセス</td></tr>
+        <tr><td>Cold</td><td>低</td><td>やや高</td><td>90日</td><td>90日以上保存の低頻度アクセス</td></tr>
+        <tr><td>Archive</td><td>最低</td><td>最高</td><td>180日</td><td>長期保存（リハイドレーション要）</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box warn">
+      <strong>Archive 層の注意点</strong>
+      Archive 層のデータはオフラインであり、読み取りにはリハイドレーション（Hot/Cool への変更）が必要です。リハイドレーションには最大15時間かかります（標準）。高優先度を指定すると1時間未満で完了する場合があります。
+    </div>
+
+    <h4>ライフサイクル管理ポリシー</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">JSON</span><button class="copy-btn">Copy</button></div>
+<pre>{
+  <span class="attr">"rules"</span>: [{
+    <span class="attr">"name"</span>: <span class="str">"moveToCool"</span>,
+    <span class="attr">"type"</span>: <span class="str">"Lifecycle"</span>,
+    <span class="attr">"definition"</span>: {
+      <span class="attr">"filters"</span>: {
+        <span class="attr">"blobTypes"</span>: [<span class="str">"blockBlob"</span>],
+        <span class="attr">"prefixMatch"</span>: [<span class="str">"logs/"</span>]
+      },
+      <span class="attr">"actions"</span>: {
+        <span class="attr">"baseBlob"</span>: {
+          <span class="attr">"tierToCool"</span>: { <span class="attr">"daysAfterModificationGreaterThan"</span>: <span class="num">30</span> },
+          <span class="attr">"tierToArchive"</span>: { <span class="attr">"daysAfterModificationGreaterThan"</span>: <span class="num">90</span> },
+          <span class="attr">"delete"</span>: { <span class="attr">"daysAfterModificationGreaterThan"</span>: <span class="num">365</span> }
+        }
+      }
+    }
+  }]
+}</pre>
+    </div>
+
+    <h4>SAS（Shared Access Signatures）</h4>
+    <p>SAS は、ストレージリソースへの制限付きアクセスを委任するためのトークンです。</p>
+    <div class="table-wrapper">
+      <table>
+        <tr><th>種類</th><th>スコープ</th><th>説明</th></tr>
+        <tr><td>アカウント SAS</td><td>ストレージアカウント全体</td><td>複数サービスへのアクセスを許可</td></tr>
+        <tr><td>サービス SAS</td><td>単一サービス</td><td>Blob/Queue/Table/File の1つ</td></tr>
+        <tr><td>ユーザー委任 SAS</td><td>Blob/Containerのみ</td><td>Microsoft Entra ID 認証（推奨）</td></tr>
+      </table>
+    </div>
+
+    <div class="info-box tip">
+      <strong>ベストプラクティス</strong>
+      ストアドアクセスポリシーを使うと、SAS を発行後に失効させることができます。ユーザー委任 SAS は Microsoft Entra ID を使うため最も安全です。
+    </div>
+
+    <h4>.NET SDK での Blob 操作</h4>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn">Copy</button></div>
+<pre><span class="cm">// クライアントの作成</span>
+<span class="ty">BlobServiceClient</span> <span class="attr">serviceClient</span> = <span class="kw">new</span> <span class="ty">BlobServiceClient</span>(<span class="str">"connectionString"</span>);
+<span class="ty">BlobContainerClient</span> <span class="attr">containerClient</span> = serviceClient
+    .<span class="fn">GetBlobContainerClient</span>(<span class="str">"my-container"</span>);
+
+<span class="cm">// コンテナの作成</span>
+<span class="kw">await</span> containerClient.<span class="fn">CreateIfNotExistsAsync</span>(
+    <span class="ty">PublicAccessType</span>.Blob);
+
+<span class="cm">// Blob のアップロード</span>
+<span class="ty">BlobClient</span> <span class="attr">blobClient</span> = containerClient.<span class="fn">GetBlobClient</span>(<span class="str">"myfile.txt"</span>);
+<span class="kw">await</span> blobClient.<span class="fn">UploadAsync</span>(<span class="str">"path/to/local/file.txt"</span>,
+    overwrite: <span class="kw">true</span>);
+
+<span class="cm">// Blob のダウンロード</span>
+<span class="ty">BlobDownloadInfo</span> <span class="attr">download</span> = <span class="kw">await</span> blobClient.<span class="fn">DownloadAsync</span>();
+
+<span class="cm">// メタデータの設定</span>
+<span class="kw">var</span> <span class="attr">metadata</span> = <span class="kw">new</span> Dictionary&lt;<span class="kw">string</span>, <span class="kw">string</span>&gt;
+{
+    { <span class="str">"Author"</span>, <span class="str">"John"</span> },
+    { <span class="str">"Category"</span>, <span class="str">"Report"</span> }
+};
+<span class="kw">await</span> blobClient.<span class="fn">SetMetadataAsync</span>(metadata);
+
+<span class="cm">// Blob の一覧取得</span>
+<span class="kw">await foreach</span> (<span class="ty">BlobItem</span> <span class="attr">blob</span> <span class="kw">in</span> containerClient.<span class="fn">GetBlobsAsync</span>())
+{
+    Console.<span class="fn">WriteLine</span>(blob.Name);
+}</pre>
+    </div>
+
+    <h4>不変ストレージ（Immutable Storage）</h4>
+    <ul>
+      <li><strong>時間ベースのリテンション</strong>: 指定期間、データの変更・削除を禁止</li>
+      <li><strong>リーガルホールド</strong>: 明示的に解除するまで変更・削除を禁止</li>
+      <li>コンプライアンス要件（WORM: Write Once, Read Many）に対応</li>
+    </ul>
+  </div>
+
+  <!-- ==================== Quiz ==================== -->
+  <div class="quiz-section" data-module="storage">
+    <h3>&#128221; 確認テスト</h3>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q1</span>
+      <p class="q-text">Cosmos DB のデフォルトの整合性レベルはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q1" value="a"> Strong</label></li>
+        <li><label><input type="radio" name="q1" value="b"> Eventual</label></li>
+        <li><label><input type="radio" name="q1" value="c"> Session</label></li>
+        <li><label><input type="radio" name="q1" value="d"> Bounded Staleness</label></li>
+      </ul>
+      <div class="q-explanation">Cosmos DB のデフォルト整合性レベルは Session です。セッション内では自分自身の書き込みを即座に読み取れるため、多くのユースケースに適しています。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q2</span>
+      <p class="q-text">Cosmos DB で最もコスト効率の高い読み取り操作はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q2" value="a"> SQL クエリ（SELECT * FROM c）</label></li>
+        <li><label><input type="radio" name="q2" value="b"> ポイントリード（id + パーティションキー指定）</label></li>
+        <li><label><input type="radio" name="q2" value="c"> クロスパーティションクエリ</label></li>
+        <li><label><input type="radio" name="q2" value="d"> ストアドプロシージャ</label></li>
+      </ul>
+      <div class="q-explanation">ポイントリード（id + パーティションキー指定）は約1 RU で最も低コストです。クエリはスキャン範囲やフィルタの複雑さに応じてコストが増加します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q3</span>
+      <p class="q-text">Blob Storage の Archive 層について正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q3" value="a"> 即座にデータにアクセスできる</label></li>
+        <li><label><input type="radio" name="q3" value="b"> 最小保持期間はない</label></li>
+        <li><label><input type="radio" name="q3" value="c"> ストレージコストが最も高い</label></li>
+        <li><label><input type="radio" name="q3" value="d"> リハイドレーションが必要で最大15時間かかる</label></li>
+      </ul>
+      <div class="q-explanation">Archive 層はオフラインストレージで、データを読み取るにはリハイドレーション（Hot/Cool に変更）が必要です。標準優先度で最大15時間かかります。最小保持期間は180日です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q4</span>
+      <p class="q-text">SAS の種類で最もセキュアなものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q4" value="a"> ユーザー委任 SAS</label></li>
+        <li><label><input type="radio" name="q4" value="b"> サービス SAS</label></li>
+        <li><label><input type="radio" name="q4" value="c"> アカウント SAS</label></li>
+        <li><label><input type="radio" name="q4" value="d"> すべて同じセキュリティレベル</label></li>
+      </ul>
+      <div class="q-explanation">ユーザー委任 SAS は Microsoft Entra ID の資格情報で署名されるため、ストレージアカウントキーが漏洩するリスクがなく、最も安全です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q5</span>
+      <p class="q-text">Cosmos DB の変更フィードで検出できるのはどの操作ですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q5" value="a"> 作成、更新、削除</label></li>
+        <li><label><input type="radio" name="q5" value="b"> 作成と更新のみ</label></li>
+        <li><label><input type="radio" name="q5" value="c"> 作成のみ</label></li>
+        <li><label><input type="radio" name="q5" value="d"> すべての操作（読み取りを含む）</label></li>
+      </ul>
+      <div class="q-explanation">変更フィードはアイテムの作成と更新のみを検出します。削除は検出されないため、論理削除（ソフトデリート）パターンを使用する必要があります。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q6</span>
+      <p class="q-text">ログファイルの追記に最適な Blob の種類はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q6" value="a"> Block Blob</label></li>
+        <li><label><input type="radio" name="q6" value="b"> Page Blob</label></li>
+        <li><label><input type="radio" name="q6" value="c"> Append Blob</label></li>
+        <li><label><input type="radio" name="q6" value="d"> いずれも同等</label></li>
+      </ul>
+      <div class="q-explanation">Append Blob は追記（Append）操作に特化しており、ログファイルの保存に最適です。末尾への追記のみ許可し、既存データの変更はできません。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="d">
+      <span class="q-number">Q7</span>
+      <p class="q-text">Cosmos DB のパーティションキーに関して正しいものはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q7" value="a"> いつでも変更可能</label></li>
+        <li><label><input type="radio" name="q7" value="b"> 値が少ないプロパティが最適</label></li>
+        <li><label><input type="radio" name="q7" value="c"> 論理パーティションのサイズ制限はない</label></li>
+        <li><label><input type="radio" name="q7" value="d"> コンテナ作成後は変更できない</label></li>
+      </ul>
+      <div class="q-explanation">パーティションキーはコンテナ作成時に設定し、後から変更することはできません。カーディナリティが高いプロパティを選択し、論理パーティションの上限は20GBです。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="a">
+      <span class="q-number">Q8</span>
+      <p class="q-text">Blob ライフサイクル管理ポリシーで、30日経過後に Cool 層へ移動するアクションのフィルタ条件は？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q8" value="a"> daysAfterModificationGreaterThan: 30</label></li>
+        <li><label><input type="radio" name="q8" value="b"> daysAfterCreationGreaterThan: 30</label></li>
+        <li><label><input type="radio" name="q8" value="c"> daysAfterAccessGreaterThan: 30</label></li>
+        <li><label><input type="radio" name="q8" value="d"> daysAfterUploadGreaterThan: 30</label></li>
+      </ul>
+      <div class="q-explanation">ライフサイクル管理では <code>daysAfterModificationGreaterThan</code> を使用して、最終更新日からの経過日数に基づいてアクションを定義します。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="b">
+      <span class="q-number">Q9</span>
+      <p class="q-text">Cosmos DB で RU（Request Unit）のコストが最も高い操作はどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q9" value="a"> 1KB のポイントリード</label></li>
+        <li><label><input type="radio" name="q9" value="b"> クロスパーティションクエリ</label></li>
+        <li><label><input type="radio" name="q9" value="c"> 単一パーティション内のクエリ</label></li>
+        <li><label><input type="radio" name="q9" value="d"> アイテムの作成（1KB）</label></li>
+      </ul>
+      <div class="q-explanation">クロスパーティションクエリは複数のパーティションをスキャンするため、最もRUコストが高くなります。ポイントリードが最も低コスト（~1 RU）です。</div>
+    </div>
+
+    <div class="quiz-question" data-answer="c">
+      <span class="q-number">Q10</span>
+      <p class="q-text">Blob Storage の不変ストレージ（WORM）ポリシーで、明示的に解除するまでデータを保護するのはどれですか？</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q10" value="a"> 時間ベースリテンション</label></li>
+        <li><label><input type="radio" name="q10" value="b"> ライフサイクル管理</label></li>
+        <li><label><input type="radio" name="q10" value="c"> リーガルホールド</label></li>
+        <li><label><input type="radio" name="q10" value="d"> ソフトデリート</label></li>
+      </ul>
+      <div class="q-explanation">リーガルホールドは、明示的に解除するまでデータの変更・削除を禁止します。時間ベースリテンションは指定期間のみ保護します。</div>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn btn-primary quiz-check">採点する</button>
+      <button class="btn btn-secondary quiz-reset">リセット</button>
+    </div>
+    <div class="quiz-result"></div>
+  </div>
+
+  <div class="page-nav">
+    <a href="compute.html" class="btn btn-secondary">&larr; コンピューティング</a>
+    <a href="security.html" class="btn btn-primary">セキュリティ &rarr;</a>
+  </div>
+
+  <footer class="site-footer">AZ-204 学習ガイド &copy; 2026</footer>
+</main>
+
+<button class="scroll-top" aria-label="ページ上部へ">&#8679;</button>
+<script src="js/app.js"></script>
+</body>
+</html>
