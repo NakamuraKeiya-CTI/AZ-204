@@ -127,6 +127,129 @@
     </div>
   </div>
 
+  <!-- コード・コマンド早見表 -->
+  <div class="section" style="margin-top:40px;">
+    <h3>コード・コマンド早見表</h3>
+    <p style="color:var(--text-secondary);font-size:.9rem;margin-bottom:20px;">
+      学習資料に登場するコードやコマンドは、大きく4種類に分かれます。それぞれの実行場所と目的を押さえておきましょう。
+    </p>
+
+    <!-- 1. Azure CLI -->
+    <h4>1. Azure CLI コマンド</h4>
+    <p style="font-size:.9rem;margin-bottom:8px;">
+      <strong>実行場所：</strong>ターミナル（コマンドプロンプト / PowerShell / Bash）<br>
+      <strong>目的：</strong>Azureのリソース（Webアプリ、コンテナ、Key Vaultなど）をコマンドで作成・管理する
+    </p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">Azure CLI</span><button class="copy-btn" onclick="copyCode(this)">コピー</button></div>
+      <pre>az webapp create \
+  --resource-group myRG \
+  --plan myPlan \
+  --name myApp \
+  --runtime "DOTNETCORE:8.0"</pre>
+    </div>
+    <div class="info-box note">
+      <strong>ポイント</strong>
+      Azureポータル（Web画面）でマウス操作する代わりに、同じ操作をコマンドで実行できるツールです。使用前に <code>az login</code> でサインインが必要です。
+    </div>
+
+    <!-- 2. C# / .NET SDK -->
+    <h4>2. C# コード（.NET SDK）</h4>
+    <p style="font-size:.9rem;margin-bottom:8px;">
+      <strong>実行場所：</strong>Visual Studio / VS Code で作成するC#アプリケーション内<br>
+      <strong>目的：</strong>自分が作るアプリのコードからAzureサービス（Blob Storage、Cosmos DB、Key Vault等）を操作する
+    </p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C#</span><button class="copy-btn" onclick="copyCode(this)">コピー</button></div>
+      <pre><span class="ty">BlobServiceClient</span> serviceClient = <span class="kw">new</span> <span class="ty">BlobServiceClient</span>(connectionString);
+<span class="ty">BlobContainerClient</span> containerClient = serviceClient.<span class="fn">GetBlobContainerClient</span>(<span class="str">"my-container"</span>);
+<span class="kw">await</span> blobClient.<span class="fn">UploadAsync</span>(<span class="str">"file.txt"</span>, overwrite: <span class="kw">true</span>);</pre>
+    </div>
+    <div class="info-box note">
+      <strong>ポイント</strong>
+      <code>dotnet new console</code> でプロジェクトを作成し、NuGetパッケージ（例：<code>Azure.Storage.Blobs</code>）をインストールしてから使用します。
+    </div>
+
+    <!-- 3. CRON式 -->
+    <h4>3. CRON式</h4>
+    <p style="font-size:.9rem;margin-bottom:8px;">
+      <strong>実行場所：</strong>C#コード内の <code>[TimerTrigger(...)]</code> 属性の引数（Azure Functionsの一部）<br>
+      <strong>目的：</strong>Azure Functionsを「いつ自動実行するか」スケジュール指定する<br>
+      <strong>形式：</strong><code>{秒} {分} {時} {日} {月} {曜日}</code>（6フィールド）
+    </p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">C# - Azure Functions</span><button class="copy-btn" onclick="copyCode(this)">コピー</button></div>
+      <pre><span class="cm">// 5分ごとに実行</span>
+[<span class="fn">TimerTrigger</span>(<span class="str">"0 */5 * * * *"</span>)]
+
+<span class="cm">// 毎日午前9時に実行</span>
+[<span class="fn">TimerTrigger</span>(<span class="str">"0 0 9 * * *"</span>)]
+
+<span class="cm">// 平日の毎朝8時30分に実行</span>
+[<span class="fn">TimerTrigger</span>(<span class="str">"0 30 8 * * 1-5"</span>)]</pre>
+    </div>
+    <div class="info-box note">
+      <strong>ポイント</strong>
+      CRON式は独立したコマンドではなく、C#コードに組み込むスケジュール設定値です。Linuxのcronと似ていますが、先頭に「秒」が追加された6フィールド形式です。
+    </div>
+
+    <!-- 4. KQL -->
+    <h4>4. KQL（Kusto Query Language）</h4>
+    <p style="font-size:.9rem;margin-bottom:8px;">
+      <strong>実行場所：</strong>Azureポータル &rarr; Application Insights &rarr; ログ（Log Analytics）画面<br>
+      <strong>目的：</strong>アプリの監視データ（リクエスト、例外、パフォーマンス）を検索・分析する
+    </p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="lang">KQL</span><button class="copy-btn" onclick="copyCode(this)">コピー</button></div>
+      <pre>requests
+| <span class="kw">where</span> timestamp > <span class="fn">ago</span>(<span class="num">24h</span>)
+| <span class="kw">where</span> success == <span class="kw">false</span>
+| <span class="fn">summarize</span> <span class="fn">count</span>() <span class="kw">by</span> resultCode
+| <span class="kw">order by</span> count_ <span class="kw">desc</span></pre>
+    </div>
+    <div class="info-box note">
+      <strong>ポイント</strong>
+      KQLはAzureポータルのブラウザ上で直接入力・実行します。SQLに似た文法ですが、パイプ（<code>|</code>）でデータを絞り込んでいく形式が特徴です。
+    </div>
+
+    <!-- まとめ表 -->
+    <h4 style="margin-top:28px;">まとめ</h4>
+    <div class="table-wrapper">
+      <table>
+        <tr>
+          <th>種類</th>
+          <th>実行場所</th>
+          <th>目的</th>
+        </tr>
+        <tr>
+          <td><strong>Azure CLI</strong> <code>az ...</code></td>
+          <td>ターミナル</td>
+          <td>Azureリソースの作成・管理</td>
+        </tr>
+        <tr>
+          <td><strong>C# / .NET SDK</strong></td>
+          <td>アプリのソースコード内</td>
+          <td>アプリからAzureサービスを操作</td>
+        </tr>
+        <tr>
+          <td><strong>CRON式</strong></td>
+          <td>C#コードの <code>[TimerTrigger]</code> 内</td>
+          <td>Azure Functionsの定期実行スケジュール</td>
+        </tr>
+        <tr>
+          <td><strong>KQL</strong></td>
+          <td>Azureポータルのログ画面</td>
+          <td>監視データの検索・分析</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="info-box tip" style="margin-top:20px;">
+      <strong>試験でのポイント</strong>
+      AZ-204では、これらを実際に実行するのではなく「このシナリオではどのコード/コマンドが正しいか？」を選択肢から選ぶ形式で問われます。各コードの意味と使い分けを理解しておくことが重要です。
+    </div>
+  </div>
+
   <footer class="site-footer">
     AZ-204 学習ガイド &copy; 2026 | 個人学習用資料
   </footer>
